@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, Shield, Award, Zap, Brain, Volume2, VolumeX, Grid, Bot, Gamepad2, MessageSquare, Download } from 'lucide-react';
+import { Flame, Shield, Award, Zap, Brain, Volume2, VolumeX, Grid, Bot, Gamepad2, MessageSquare, Download, Mic } from 'lucide-react';
 import type { UserProgress } from '../types';
 import { isSoundMuted, setSoundMuted, playClickSound } from '../services/sound';
 
@@ -10,6 +10,7 @@ interface NavbarProps {
   onLaunchMemoryGame: () => void;
   onOpenWittChat: () => void;
   onOpenHistoryModal: () => void;
+  onOpenVoiceDrill: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,6 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLaunchMemoryGame,
   onOpenWittChat,
   onOpenHistoryModal,
+  onOpenVoiceDrill,
 }) => {
   const [muted, setMuted] = useState<boolean>(isSoundMuted());
 
@@ -52,7 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div>
             <span className="font-heading font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
-              SENWITT <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-semibold border border-indigo-500/30">PRO</span>
+              SENWITT <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-semibold border border-indigo-500/30">PHASE 2</span>
             </span>
             <p className="text-[10px] text-[var(--text-muted)] tracking-wider uppercase font-medium">Cognitive OS</p>
           </div>
@@ -81,6 +83,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Gamepad2 className="w-3.5 h-3.5 text-indigo-400" />
             <span>15 Games</span>
+          </button>
+
+          <button
+            onClick={onOpenVoiceDrill}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-all flex items-center gap-1 border border-rose-500/30 bg-rose-500/10 focus-ring"
+          >
+            <Mic className="w-3.5 h-3.5 text-rose-400" />
+            <span>Voice Drill</span>
           </button>
 
           <button

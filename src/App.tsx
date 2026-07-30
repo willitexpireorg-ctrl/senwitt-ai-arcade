@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
 import { SkillCatalog } from './components/SkillCatalog';
@@ -10,17 +10,22 @@ import { GamesArcade } from './components/GamesArcade';
 import { SessionSummaryModal } from './components/SessionSummaryModal';
 import { WittChatModal } from './components/WittChatModal';
 import { SessionHistoryModal } from './components/SessionHistoryModal';
+import { VoiceFluencyDrill } from './components/VoiceFluencyDrill';
 import { NeuralBackground } from './components/NeuralBackground';
 import type { UserProgress, SessionResult, SetMode, SkillCategory, ExerciseItem } from './types';
 import { getStoredProgress, recordSessionCompletion, getSessionHistory } from './services/storage';
 import { EXERCISE_BANK, getDailySetForMode } from './data/exerciseBank';
 import { generateProceduralMathItem, generateProceduralCodeItem } from './services/proceduralGenerator';
 import type { GameSpec } from './services/researchAgent';
+import { Phase2MultiAgentOrchestrator } from './services/phase2Orchestrator';
 
 export const App: React.FC = () => {
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress);
   const [sessionHistory, setSessionHistory] = useState<SessionResult[]>(getSessionHistory);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+
+  // Multi-Agent Orchestrator Framework Instance
+  const phase2Orchestrator = useMemo(() => new Phase2MultiAgentOrchestrator(0.2), []);
 
   // Exercise bank state
   const [customBank, setCustomBank] = useState<ExerciseItem[]>(EXERCISE_BANK);
@@ -34,6 +39,7 @@ export const App: React.FC = () => {
   const [completedSession, setCompletedSession] = useState<SessionResult | null>(null);
   const [isWittChatOpen, setIsWittChatOpen] = useState<boolean>(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
+  const [isVoiceDrillOpen, setIsVoiceDrillOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setProgress(getStoredProgress());
@@ -43,9 +49,12 @@ export const App: React.FC = () => {
   const handleStartSet = (mode: SetMode) => {
     const baseItems = getDailySetForMode(mode);
     const proceduralItems = [generateProceduralMathItem(), generateProceduralCodeItem()];
-    const items = [...baseItems, ...proceduralItems].slice(0, mode === 'coffee_break' ? 3 : mode === 'weekend_long' ? 8 : 5);
+    const rawItems = [...baseItems, ...proceduralItems].slice(0, mode === 'coffee_break' ? 3 : mode === 'weekend_long' ? 8 : 5);
 
-    setActiveSessionItems(items);
+    // Phase 2 IRT Flow-State Queue Calibration
+    const calibratedItems = phase2Orchestrator.filterQueueForOptimalFlow(rawItems);
+
+    setActiveSessionItems(calibratedItems);
     setActiveSessionMode(mode);
     setIsSpatialGameActive(false);
   };
@@ -100,6 +109,11 @@ export const App: React.FC = () => {
   };
 
   const handleCompleteSession = (result: SessionResult) => {
+    // Calibrate IRT theta profile for each rep
+    result.attempts.forEach((att) => {
+      phase2Orchestrator.processRepResult(att.isCorrect, att.timeSpentMs);
+    });
+
     const updated = recordSessionCompletion(result);
     setProgress(updated);
     setSessionHistory(getSessionHistory());
@@ -127,6 +141,7 @@ export const App: React.FC = () => {
         onLaunchMemoryGame={handleLaunchSpatialGame}
         onOpenWittChat={() => setIsWittChatOpen(true)}
         onOpenHistoryModal={() => setIsHistoryModalOpen(true)}
+        onOpenVoiceDrill={() => setIsVoiceDrillOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -214,9 +229,16 @@ export const App: React.FC = () => {
         />
       )}
 
+      {/* Web Speech Voice Fluency Drill Modal */}
+      {isVoiceDrillOpen && (
+        <VoiceFluencyDrill
+          onClose={() => setIsVoiceDrillOpen(false)}
+        />
+      )}
+
       {/* Footer */}
       <footer className="w-full border-t border-[var(--border-color)] py-6 text-center text-xs text-gray-500 relative z-10">
-        <p>© 2026 SENWITT AI ENTERPRISE — 15 Cognitive Games & Human Intelligence OS</p>
+        <p>© 2026 SENWITT AI PHASE 2 — IRT Adaptive Engine & Voice Speech Fluency</p>
       </footer>
 
     </div>
