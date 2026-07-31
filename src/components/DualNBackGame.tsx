@@ -163,47 +163,53 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
   const currentLetter = letters[currentStep] ?? '';
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="w-full max-w-2xl mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-center items-center relative z-10">
+      {/* Top Header */}
+      <div className="w-full flex items-center justify-between mb-6">
         <button
           onClick={onCancel}
-          className="text-xs font-semibold text-gray-400 hover:text-white px-3.5 py-2 rounded-xl bg-white/5 border border-white/10"
+          className="btn-3d px-4 py-2 text-xs bg-slate-800 text-gray-300 border-b-4 border-slate-950 hover:bg-slate-700"
         >
-          Exit Game
+          ✕ Exit Arena
         </button>
 
-        <div className="flex items-center gap-2 text-xs text-cyan-300 font-bold px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-          <Brain className="w-4 h-4 text-cyan-400" />
-          <span>Dual {nLevel}-Back • Trial {Math.min(currentStep + 1, trialCount)}/{trialCount}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-extrabold text-sm shadow-md">
+            <Brain className="w-4 h-4 text-cyan-400" />
+            <span>Dual {nLevel}-Back • Trial {Math.min(currentStep + 1, trialCount)}/{trialCount}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-sm shadow-md">
+            <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <span>{score} XP</span>
+          </div>
         </div>
       </div>
 
-      {/* Main Glass Card */}
-      <div className="glass-panel p-6 md:p-8 text-center border border-cyan-500/30">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold uppercase tracking-wider mb-4 border border-cyan-500/30">
-          <Sparkles className="w-3.5 h-3.5" />
+      {/* Main Glass Hero Container */}
+      <div className="w-full glass-panel p-8 md:p-12 text-center border-2 border-cyan-500/40 shadow-2xl rounded-3xl flex flex-col items-center justify-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider mb-6 border border-cyan-500/40 shadow-md">
+          <Sparkles className="w-4 h-4" />
           Working Memory & Fluid Intelligence
         </div>
 
-        <h2 className="text-xl font-bold text-white mb-1">
-          {gameFinished ? 'Dual N-Back Complete! 🎉' : `Match ${nLevel} Step${nLevel > 1 ? 's' : ''} Back`}
+        <h2 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight">
+          {gameFinished ? 'Dual N-Back Complete! 🎉' : `Match ${nLevel} Step${nLevel > 1 ? 's' : ''} Back 🧠`}
         </h2>
-        <p className="text-xs text-gray-300 mb-6">
-          Compare the current position & letter to what appeared {nLevel} step{nLevel > 1 ? 's' : ''} ago.
+        <p className="text-sm md:text-base text-gray-300 mb-8 max-w-md">
+          Compare current grid location & spoken letter to what appeared {nLevel} step{nLevel > 1 ? 's' : ''} ago.
         </p>
 
         {/* 3x3 Grid Display */}
-        <div className="grid grid-cols-3 gap-3 max-w-[240px] mx-auto mb-6">
+        <div className="grid grid-cols-3 gap-4 w-full max-w-[280px] mx-auto mb-8">
           {Array.from({ length: 9 }).map((_, idx) => {
             const isActive = activeGridIndex === idx;
             return (
               <div
                 key={idx}
-                className={`aspect-square rounded-2xl border transition-all duration-200 flex items-center justify-center font-extrabold text-2xl ${
+                className={`aspect-square rounded-2xl border-b-4 transition-all duration-150 flex items-center justify-center font-black text-3xl ${
                   isActive
-                    ? 'bg-cyan-500 border-cyan-300 shadow-lg shadow-cyan-500/50 scale-105 text-white'
-                    : 'bg-white/5 border-white/10 text-white/20'
+                    ? 'bg-cyan-400 border-cyan-600 text-slate-950 shadow-2xl shadow-cyan-400/80 scale-105 border-b-0 translate-y-1'
+                    : 'bg-slate-800/80 border-slate-950 text-gray-600'
                 }`}
               >
                 {isActive ? currentLetter : ''}
@@ -213,27 +219,27 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
         </div>
 
         {/* Letter Sound / Display Prompt */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 mb-6">
-          <Volume2 className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-extrabold text-white">Current Letter: {currentLetter}</span>
+        <div className="inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-slate-900 border border-slate-700 mb-8 shadow-inner">
+          <Volume2 className="w-5 h-5 text-cyan-400 animate-pulse" />
+          <span className="text-base font-black text-white tracking-wide">Audio Letter: {currentLetter}</span>
         </div>
 
-        {/* Action Match Buttons */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        {/* Tactile 3D Action Match Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md mb-6">
           <button
             disabled={userMatchedPosition || currentStep < nLevel}
             onClick={handlePositionMatch}
-            className={`py-3.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between border transition-all ${
+            className={`btn-3d py-4 px-5 text-xs flex items-center justify-between shadow-xl ${
               userMatchedPosition
-                ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200'
-                : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-cyan-400/40 shadow-lg shadow-cyan-500/20'
+                ? 'bg-cyan-900 border-b-4 border-cyan-950 text-cyan-400 opacity-60'
+                : 'btn-3d-cyan'
             }`}
           >
             <div className="flex items-center gap-2">
-              <Grid className="w-4 h-4" />
+              <Grid className="w-5 h-5" />
               <span>Position Match</span>
             </div>
-            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded border border-white/20 font-mono">
+            <span className="text-[10px] bg-black/20 px-2 py-1 rounded-lg border border-white/20 font-mono">
               [P] / [1]
             </span>
           </button>
@@ -241,24 +247,24 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
           <button
             disabled={userMatchedLetter || currentStep < nLevel}
             onClick={handleLetterMatch}
-            className={`py-3.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between border transition-all ${
+            className={`btn-3d py-4 px-5 text-xs flex items-center justify-between shadow-xl ${
               userMatchedLetter
-                ? 'bg-indigo-500/30 border-indigo-400 text-indigo-200'
-                : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white border-indigo-400/40 shadow-lg shadow-indigo-500/20'
+                ? 'bg-violet-900 border-b-4 border-violet-950 text-violet-400 opacity-60'
+                : 'btn-3d-violet'
             }`}
           >
             <div className="flex items-center gap-2">
-              <Volume2 className="w-4 h-4" />
+              <Volume2 className="w-5 h-5" />
               <span>Letter Match</span>
             </div>
-            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded border border-white/20 font-mono">
+            <span className="text-[10px] bg-black/20 px-2 py-1 rounded-lg border border-white/20 font-mono">
               [L] / [2]
             </span>
           </button>
         </div>
 
         {/* Status Feedback */}
-        <div className="text-xs text-gray-300 font-medium">
+        <div className="text-sm font-bold text-cyan-200 py-2 px-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
           {statusMessage}
         </div>
       </div>

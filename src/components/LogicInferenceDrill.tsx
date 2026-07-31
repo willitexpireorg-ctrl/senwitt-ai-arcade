@@ -126,60 +126,66 @@ export const LogicInferenceDrill: React.FC<LogicInferenceDrillProps> = ({ onComp
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="w-full max-w-2xl mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-center items-center relative z-10">
+      {/* Top Header */}
+      <div className="w-full flex items-center justify-between mb-6">
         <button
           onClick={onCancel}
-          className="text-xs font-semibold text-gray-400 hover:text-white px-3.5 py-2 rounded-xl bg-white/5 border border-white/10"
+          className="btn-3d px-4 py-2 text-xs bg-slate-800 text-gray-300 border-b-4 border-slate-950 hover:bg-slate-700"
         >
-          Exit Drill
+          ✕ Exit Arena
         </button>
 
-        <div className="flex items-center gap-2 text-xs text-purple-300 font-bold px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
-          <ShieldCheck className="w-4 h-4 text-purple-400" />
-          <span>Verbal Logic • Problem {currentIndex + 1}/{LOGIC_PROBLEMS.length}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-500/20 border border-purple-500/40 text-purple-300 font-extrabold text-sm shadow-md">
+            <ShieldCheck className="w-4 h-4 text-purple-400" />
+            <span>Problem {currentIndex + 1}/{LOGIC_PROBLEMS.length}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-sm shadow-md">
+            <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <span>{score} XP</span>
+          </div>
         </div>
       </div>
 
-      {/* Main Glass Panel */}
-      <div className="glass-panel p-6 md:p-8 border border-purple-500/30">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider mb-4 border border-purple-500/30">
-          <Sparkles className="w-3.5 h-3.5" />
+      {/* Main Glass Hero Container */}
+      <div className="w-full glass-panel p-8 md:p-12 border-2 border-purple-500/40 shadow-2xl rounded-3xl flex flex-col items-center justify-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black uppercase tracking-wider mb-6 border border-purple-500/40 shadow-md">
+          <Sparkles className="w-4 h-4 text-purple-400" />
           Deductive Logic & Syllogism Analysis
         </div>
 
         {/* Premises Card */}
-        <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-5 mb-6 space-y-2">
-          <div className="text-[11px] uppercase font-extrabold text-purple-400 tracking-wider">Premises</div>
-          <p className="text-sm font-medium text-gray-200">1. {problem.premise1}</p>
-          <p className="text-sm font-medium text-gray-200">2. {problem.premise2}</p>
+        <div className="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl p-6 mb-6 space-y-3 text-left shadow-2xl">
+          <div className="text-xs uppercase font-black text-purple-400 tracking-widest">Formal Premises</div>
+          <p className="text-base font-semibold text-gray-200 leading-relaxed">1. {problem.premise1}</p>
+          <p className="text-base font-semibold text-gray-200 leading-relaxed">2. {problem.premise2}</p>
         </div>
 
         {/* Question Title */}
-        <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-purple-400" />
-          {problem.question}
+        <h3 className="text-lg md:text-xl font-black text-white mb-6 flex items-center justify-center gap-2 text-center">
+          <HelpCircle className="w-5 h-5 text-purple-400 shrink-0" />
+          <span>{problem.question}</span>
         </h3>
 
-        {/* Multiple Choice Options */}
-        <div className="space-y-3 mb-6">
+        {/* 3D Tactile Multiple Choice Options */}
+        <div className="space-y-4 w-full mb-6">
           {problem.options.map((optionText, idx) => {
             const isSelected = selectedOption === idx;
             const isCorrectOption = idx === problem.correctIndex;
 
-            let optClass = "w-full p-4 rounded-xl text-left text-xs font-semibold border transition-all flex items-center justify-between ";
+            let optClass = "btn-3d w-full p-5 text-left text-xs md:text-sm font-bold flex items-center justify-between border-b-4 shadow-lg ";
 
             if (isAnswered) {
               if (isCorrectOption) {
-                optClass += "bg-emerald-500/20 border-emerald-500/50 text-emerald-200 shadow-md";
+                optClass += "bg-emerald-600 border-emerald-900 text-white shadow-emerald-500/30";
               } else if (isSelected) {
-                optClass += "bg-rose-500/20 border-rose-500/50 text-rose-200";
+                optClass += "bg-rose-600 border-rose-900 text-white";
               } else {
-                optClass += "bg-white/5 border-white/5 text-gray-500 opacity-60";
+                optClass += "bg-slate-900 border-slate-950 text-gray-600 opacity-50";
               }
             } else {
-              optClass += "bg-white/5 border-white/10 hover:bg-white/15 hover:border-purple-400/40 text-gray-200";
+              optClass += "bg-slate-800 text-gray-200 border-slate-950 hover:bg-slate-700 active:border-b-0";
             }
 
             return (
@@ -190,32 +196,32 @@ export const LogicInferenceDrill: React.FC<LogicInferenceDrillProps> = ({ onComp
                 className={optClass}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/10 text-purple-300">
+                  <span className="text-xs font-mono font-black bg-black/40 px-2.5 py-1 rounded-lg border border-white/10 text-purple-300">
                     [{String.fromCharCode(65 + idx)}]
                   </span>
-                  <span>{optionText}</span>
+                  <span className="leading-snug">{optionText}</span>
                 </div>
-                {isAnswered && isCorrectOption && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />}
-                {isAnswered && isSelected && !isCorrectOption && <XCircle className="w-4 h-4 text-rose-400 shrink-0 ml-2" />}
+                {isAnswered && isCorrectOption && <CheckCircle2 className="w-5 h-5 text-white shrink-0 ml-2" />}
+                {isAnswered && isSelected && !isCorrectOption && <XCircle className="w-5 h-5 text-white shrink-0 ml-2" />}
               </button>
             );
           })}
         </div>
 
-        {/* Explanation & Next Button */}
+        {/* Rationale & Next Button */}
         {isAnswered && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="bg-purple-950/40 border border-purple-500/30 rounded-xl p-4 text-xs text-purple-200">
-              <span className="font-bold text-purple-300 block mb-1">Deductive Rationale:</span>
-              {problem.explanation}
+          <div className="w-full space-y-4 animate-fadeIn">
+            <div className="bg-purple-950/60 border border-purple-500/40 rounded-2xl p-5 text-xs md:text-sm text-purple-200 text-left shadow-lg">
+              <span className="font-black text-purple-300 block mb-1.5 uppercase tracking-wider text-[11px]">Deductive Rationale:</span>
+              <p className="leading-relaxed opacity-95">{problem.explanation}</p>
             </div>
 
             <button
               onClick={handleNext}
-              className="w-full py-3.5 rounded-xl font-bold text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2"
+              className="btn-3d btn-3d-violet w-full py-4 text-sm flex items-center justify-center gap-2 shadow-2xl"
             >
-              <span>{currentIndex + 1 < LOGIC_PROBLEMS.length ? 'Next Logic Problem' : 'Complete Drill'}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{currentIndex + 1 < LOGIC_PROBLEMS.length ? 'Next Logic Problem [Space]' : 'Complete Arena Drill [Space]'}</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         )}

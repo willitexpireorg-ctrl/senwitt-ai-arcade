@@ -123,66 +123,74 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-8">
+    <div className="w-full max-w-2xl mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-center items-center relative z-10">
       
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Top Bar Header */}
+      <div className="w-full flex items-center justify-between mb-6">
         <button
           onClick={() => {
             clearAllTimers();
             onCancel();
           }}
-          className="text-xs font-semibold text-gray-400 hover:text-white px-3.5 py-2 rounded-xl bg-white/5 border border-white/10"
+          className="btn-3d px-4 py-2 text-xs bg-slate-800 text-gray-300 border-b-4 border-slate-950 hover:bg-slate-700"
         >
-          Exit Game
+          ✕ Exit Arena
         </button>
 
-        <div className="flex items-center gap-2 text-xs text-indigo-300 font-bold px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-          <Brain className="w-4 h-4 text-violet-400" />
-          <span>Round {round} of 4 • Score: {score}</span>
+        {/* Duolingo XP & Round Pill */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-extrabold text-sm shadow-md">
+            <Brain className="w-4 h-4 text-cyan-400" />
+            <span>Round {round}/4</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-sm shadow-md">
+            <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <span>{score} XP</span>
+          </div>
         </div>
       </div>
 
-      {/* Main Card */}
-      <div className="glass-panel p-6 md:p-8 text-center border border-indigo-500/30">
+      {/* Main Hero Card Container */}
+      <div className="w-full glass-panel p-8 md:p-12 text-center border-2 border-indigo-500/40 shadow-2xl rounded-3xl flex flex-col items-center justify-center">
         
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-xs font-bold uppercase tracking-wider mb-4 border border-violet-500/30">
-          <Sparkles className="w-3.5 h-3.5" />
-          Spatial Working Memory Rep
+        {/* Category Pill */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/20 text-violet-300 text-xs font-black uppercase tracking-wider mb-6 border border-violet-500/40 shadow-md">
+          <Sparkles className="w-4 h-4 text-violet-400" />
+          Classic Spatial Corsi Grid
         </div>
 
-        <h2 className="text-xl font-bold text-white mb-2">
-          {status === 'watch' && 'Watch the Flashing Sequence...'}
-          {status === 'repeat' && `Tap Tiles in Order (${userSequence.length}/${sequence.length})`}
-          {status === 'success' && (round >= 4 ? 'Exercise Completed! 🎉' : `Round ${round} Cleared! ✨`)}
-          {status === 'fail' && 'Sequence Mis-tapped!'}
+        <h2 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight">
+          {status === 'watch' && 'Watch the Pattern Light Up... 👁️'}
+          {status === 'repeat' && `Tap Tiles in Order (${userSequence.length}/${sequence.length}) 🎯`}
+          {status === 'success' && (round >= 4 ? 'Arena Mastery Complete! 🎉' : `Round ${round} Cleared! ✨`)}
+          {status === 'fail' && 'Sequence Mis-tapped! 💥'}
         </h2>
 
-        <p className="text-xs text-gray-300 mb-6">
-          {status === 'watch' && 'Memorize the exact order of glowing tiles.'}
+        <p className="text-sm md:text-base text-gray-300 mb-8 max-w-md">
+          {status === 'watch' && 'Memorize the exact spatial order of illuminated tiles.'}
           {status === 'repeat' && `Tap each tile once in the exact order shown (${sequence.length - userSequence.length} taps remaining).`}
-          {status === 'success' && `Great job! Earned +${round * 30} PTS!`}
-          {status === 'fail' && `Wrong tile tapped on step ${userSequence.length} of ${sequence.length}.`}
+          {status === 'success' && `Flawless spatial memory! Earned +${round * 30} XP!`}
+          {status === 'fail' && `Missed step ${userSequence.length + 1} of ${sequence.length}. Retry to build focus!`}
         </p>
 
-        {/* 3x3 Interactive Grid */}
-        <div className="grid grid-cols-3 gap-3 max-w-[280px] mx-auto mb-6">
+        {/* 3x3 Tactile 3D Corsi Grid */}
+        <div className="grid grid-cols-3 gap-4 w-full max-w-[340px] mx-auto mb-8">
           {Array.from({ length: 9 }).map((_, idx) => {
             const isActive = activeTile === idx;
             const isUserSelected = userSequence.includes(idx) && status === 'repeat';
 
-            let tileClass = "aspect-square rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-center font-bold text-lg ";
+            let tileStyle = "aspect-square rounded-2xl font-black text-xl transition-all duration-150 cursor-pointer flex items-center justify-center relative border-b-4 ";
 
             if (isActive) {
-              tileClass += "bg-cyan-400 border-cyan-200 shadow-xl shadow-cyan-400/60 scale-105";
+              tileStyle += "bg-cyan-400 border-cyan-600 text-slate-950 shadow-2xl shadow-cyan-400/80 scale-105 border-b-0 translate-y-1";
             } else if (status === 'fail') {
-              tileClass += "bg-rose-500/20 border-rose-500/40 text-rose-300";
+              tileStyle += "bg-rose-500/30 border-rose-700 text-rose-200";
             } else if (status === 'success') {
-              tileClass += "bg-emerald-500/30 border-emerald-400/60 scale-105";
+              tileStyle += "bg-emerald-500/40 border-emerald-700 text-emerald-100 scale-105";
             } else if (isUserSelected) {
-              tileClass += "bg-indigo-500/40 border-indigo-300 shadow-md shadow-indigo-500/30";
+              tileStyle += "bg-indigo-600 border-indigo-900 text-white shadow-lg border-b-2 translate-y-0.5";
             } else {
-              tileClass += "bg-white/5 border-white/10 hover:bg-white/15 hover:border-white/20";
+              tileStyle += "bg-slate-800/80 border-slate-950 text-gray-400 hover:bg-slate-700/80 hover:border-slate-900 active:translate-y-1 active:border-b-0";
             }
 
             return (
@@ -190,14 +198,13 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
                 key={idx}
                 disabled={isPlayingSequence || status !== 'repeat'}
                 onClick={() => handleTileClick(idx)}
-                className={tileClass}
+                className={tileStyle}
               >
-                {/* Tile indicator icon or clean spatial tile glow */}
                 {isActive && (
-                  <span className="w-4 h-4 rounded-full bg-white shadow-lg animate-ping" />
+                  <span className="w-5 h-5 rounded-full bg-white shadow-lg animate-ping" />
                 )}
                 {isUserSelected && (
-                  <span className="text-xs font-semibold text-indigo-200">
+                  <span className="text-sm font-black text-cyan-200">
                     #{userSequence.lastIndexOf(idx) + 1}
                   </span>
                 )}
@@ -206,18 +213,18 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
           })}
         </div>
 
-        {/* Status Indicator */}
+        {/* Status Feedback Banner */}
         {status === 'success' && (
-          <div className="flex items-center justify-center gap-2 text-emerald-400 text-sm font-bold animate-fadeIn py-2 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <span>{round >= 4 ? 'All 4 Rounds Mastered!' : `Round ${round} Completed! (+${round * 30} PTS)`}</span>
+          <div className="flex items-center justify-center gap-2 text-emerald-300 text-base font-black animate-fadeIn py-3 px-6 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 shadow-xl">
+            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+            <span>{round >= 4 ? 'All 4 Rounds Mastered! (+50 Bonus XP)' : `Round ${round} Mastered! (+${round * 30} XP)`}</span>
           </div>
         )}
 
         {status === 'fail' && (
-          <div className="flex items-center justify-center gap-2 text-rose-400 text-sm font-bold animate-fadeIn py-2 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20">
-            <XCircle className="w-5 h-5 text-rose-400" />
-            <span>Sequence Error — Final Score: {score}</span>
+          <div className="flex items-center justify-center gap-2 text-rose-300 text-base font-black animate-fadeIn py-3 px-6 rounded-2xl bg-rose-500/20 border border-rose-500/40 shadow-xl">
+            <XCircle className="w-6 h-6 text-rose-400" />
+            <span>Sequence Error — Final Score: {score} XP</span>
           </div>
         )}
 

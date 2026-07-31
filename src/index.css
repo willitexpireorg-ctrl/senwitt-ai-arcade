@@ -108,6 +108,84 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(0) scale(0.99);
 }
 
+/* Duolingo-Style Tactile 3D Buttons */
+.btn-3d {
+  position: relative;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 18px;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-3d:active {
+  transform: translateY(4px);
+  box-shadow: none !important;
+}
+
+.btn-3d-indigo {
+  background-color: #6366f1;
+  color: #ffffff;
+  border-bottom: 5px solid #4338ca;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-3d-indigo:hover {
+  background-color: #4f46e5;
+  border-bottom-color: #3730a3;
+}
+
+.btn-3d-emerald {
+  background-color: #10b981;
+  color: #ffffff;
+  border-bottom: 5px solid #047857;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-3d-emerald:hover {
+  background-color: #059669;
+  border-bottom-color: #065f46;
+}
+
+.btn-3d-cyan {
+  background-color: #06b6d4;
+  color: #ffffff;
+  border-bottom: 5px solid #0e7490;
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+}
+
+.btn-3d-cyan:hover {
+  background-color: #0891b2;
+  border-bottom-color: #155e75;
+}
+
+.btn-3d-violet {
+  background-color: #8b5cf6;
+  color: #ffffff;
+  border-bottom: 5px solid #6d28d9;
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.btn-3d-violet:hover {
+  background-color: #7c3aed;
+  border-bottom-color: #5b21b6;
+}
+
+.btn-3d-amber {
+  background-color: #f59e0b;
+  color: #ffffff;
+  border-bottom: 5px solid #b45309;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn-3d-amber:hover {
+  background-color: #d97706;
+  border-bottom-color: #78350f;
+}
+
 /* Keyframe Animations */
 @keyframes float {
   0% { transform: translateY(0px); }

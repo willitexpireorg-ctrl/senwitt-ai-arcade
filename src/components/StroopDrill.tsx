@@ -123,77 +123,83 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }
   const avgReactionTime = correctCount > 0 ? Math.round(totalReactionTimeMs / (currentIndex + 1)) : 0;
 
   return (
-    <div className="max-w-md mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="w-full max-w-2xl mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-center items-center relative z-10">
+      {/* Top Header */}
+      <div className="w-full flex items-center justify-between mb-6">
         <button
           onClick={onCancel}
-          className="text-xs font-semibold text-gray-400 hover:text-white px-3.5 py-2 rounded-xl bg-white/5 border border-white/10"
+          className="btn-3d px-4 py-2 text-xs bg-slate-800 text-gray-300 border-b-4 border-slate-950 hover:bg-slate-700"
         >
-          Exit Game
+          ✕ Exit Arena
         </button>
 
-        <div className="flex items-center gap-2 text-xs text-amber-300 font-bold px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-          <Zap className="w-4 h-4 text-amber-400" />
-          <span>Stroop Speed • {currentIndex + 1}/{trials.length || 10}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-sm shadow-md">
+            <Zap className="w-4 h-4 text-amber-400" />
+            <span>Stroop Speed • {currentIndex + 1}/{trials.length || 10}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold text-sm shadow-md">
+            <Sparkles className="w-4 h-4 text-emerald-400 fill-emerald-400" />
+            <span>{score} XP</span>
+          </div>
         </div>
       </div>
 
-      {/* Main Glass Card */}
-      <div className="glass-panel p-6 md:p-8 text-center border border-amber-500/30">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider mb-4 border border-amber-500/30">
-          <Sparkles className="w-3.5 h-3.5" />
+      {/* Main Glass Hero Container */}
+      <div className="w-full glass-panel p-8 md:p-12 text-center border-2 border-amber-500/40 shadow-2xl rounded-3xl flex flex-col items-center justify-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider mb-6 border border-amber-500/40 shadow-md">
+          <Sparkles className="w-4 h-4" />
           Inhibition Control & Cognitive Speed
         </div>
 
-        <h2 className="text-xl font-bold text-white mb-1">
-          {isFinished ? 'Drill Complete! 🎉' : 'Select the INK COLOR!'}
+        <h2 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight">
+          {isFinished ? 'Stroop Speed Complete! 🎉' : 'Select the INK COLOR! 🎨'}
         </h2>
-        <p className="text-xs text-gray-300 mb-8">
-          Ignore what the word says — tap the button matching the font's actual visual color.
+        <p className="text-sm md:text-base text-gray-300 mb-8 max-w-md">
+          Ignore what the word spells — tap the button matching the font's actual visual ink color!
         </p>
 
-        {/* Word Display Box */}
+        {/* Big Word Display Card */}
         {currentTrial && !isFinished && (
-          <div className="bg-slate-950/80 border border-white/10 rounded-2xl py-10 mb-8 shadow-inner flex flex-col items-center justify-center min-h-[140px]">
-            <span className={`text-4xl md:text-5xl font-black uppercase tracking-widest transition-transform ${currentTrial.inkColor} ${feedback === 'correct' ? 'scale-110' : feedback === 'wrong' ? 'animate-shake' : ''}`}>
+          <div className="w-full max-w-md bg-slate-950 border-2 border-slate-800 rounded-3xl py-10 mb-8 shadow-2xl flex flex-col items-center justify-center min-h-[160px]">
+            <span className={`text-4xl md:text-6xl font-black uppercase tracking-widest transition-all ${currentTrial.inkColor} ${feedback === 'correct' ? 'scale-110' : feedback === 'wrong' ? 'animate-shake' : ''}`}>
               {currentTrial.word}
             </span>
 
             {feedback === 'correct' && (
-              <span className="text-emerald-400 text-xs font-bold mt-3 flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4" /> Fast & Accurate!
+              <span className="text-emerald-400 text-sm font-black mt-4 flex items-center gap-1.5 animate-fadeIn">
+                <CheckCircle2 className="w-5 h-5" /> Fast & Accurate!
               </span>
             )}
             {feedback === 'wrong' && (
-              <span className="text-rose-400 text-xs font-bold mt-3 flex items-center gap-1">
-                <XCircle className="w-4 h-4" /> Ink color was {currentTrial.inkName}!
+              <span className="text-rose-400 text-sm font-black mt-4 flex items-center gap-1.5 animate-fadeIn">
+                <XCircle className="w-5 h-5" /> Ink color was {currentTrial.inkName}!
               </span>
             )}
           </div>
         )}
 
-        {/* Reaction Time Badge */}
-        <div className="flex items-center justify-between text-xs text-gray-400 mb-6 px-2">
-          <span className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-amber-400" /> Avg Speed: {avgReactionTime}ms
+        {/* Reaction Time & XP Badge */}
+        <div className="w-full max-w-md flex items-center justify-between text-xs md:text-sm font-bold text-gray-400 mb-6 px-2">
+          <span className="flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-amber-400" /> Avg Speed: {avgReactionTime}ms
           </span>
-          <span className="font-bold text-white">Score: {score}</span>
+          <span className="text-amber-300 font-extrabold">Total XP: {score}</span>
         </div>
 
-        {/* Answer Options Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {/* 3D Tactile Answer Buttons */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-md">
           {COLOR_OPTIONS.map((opt, idx) => (
             <button
               key={opt.name}
               onClick={() => handleAnswer(opt.name)}
-              className="py-3.5 px-3 rounded-xl font-extrabold text-xs bg-white/5 border border-white/10 hover:bg-white/15 hover:border-amber-400/40 text-white transition-all active:scale-95 shadow-md flex items-center justify-between"
+              className="btn-3d py-3.5 px-3 text-xs bg-slate-800 text-white border-b-4 border-slate-950 hover:bg-slate-700 active:border-b-0 flex items-center justify-between shadow-lg"
             >
               <div className="flex items-center gap-2">
-                <span className={`w-3 h-3 rounded-full ${opt.colorClass.replace('text-', 'bg-')}`} />
+                <span className={`w-3.5 h-3.5 rounded-full ${opt.colorClass.replace('text-', 'bg-')}`} />
                 <span>{opt.name}</span>
               </div>
-              <span className="text-[10px] text-gray-500 font-mono font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/10">
+              <span className="text-[10px] text-gray-400 font-mono font-bold bg-black/30 px-1.5 py-0.5 rounded border border-white/10">
                 [{idx + 1}]
               </span>
             </button>

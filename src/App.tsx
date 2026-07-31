@@ -11,7 +11,7 @@ import { SessionSummaryModal } from './components/SessionSummaryModal';
 import { WittChatModal } from './components/WittChatModal';
 import { SessionHistoryModal } from './components/SessionHistoryModal';
 import { VoiceFluencyDrill } from './components/VoiceFluencyDrill';
-import { NeuralBackground } from './components/NeuralBackground';
+import { ThreeBackground } from './components/ThreeBackground';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DualNBackGame } from './components/DualNBackGame';
 import { StroopDrill } from './components/StroopDrill';
@@ -144,8 +144,8 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-white flex flex-col selection:bg-indigo-500 selection:text-white relative">
       
-      {/* Interactive Neural Synapses Canvas */}
-      <NeuralBackground />
+      {/* Interactive 3D Three.js Particle & Constellation Background */}
+      <ThreeBackground />
 
       {/* Top Navigation */}
       <Navbar
