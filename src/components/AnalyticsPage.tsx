@@ -1,9 +1,8 @@
 import React from 'react';
-import { Award, Flame, CheckCircle, TrendingUp, ShieldCheck, Sparkles, Eye, Zap, Shield } from 'lucide-react';
+import { Award, Flame, CheckCircle, TrendingUp, ShieldCheck, Sparkles } from 'lucide-react';
 import type { UserProgress, SessionResult, SkillCategory } from '../types';
 import { SharpnessGauge } from './SharpnessGauge';
 import { CognitiveRadarChart } from './CognitiveRadarChart';
-import { GestaltHierarchyAgent, BehavioralHabitAgent, CognitiveFrictionAgent, NeuroAestheticAgent } from '../services/uiPsychologyAgents';
 
 interface AnalyticsPageProps {
   progress: UserProgress;
@@ -22,21 +21,14 @@ const BELT_THRESHOLDS = [
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ progress, sessionHistory: _sessionHistory }) => {
   const categories: SkillCategory[] = ['writing', 'math', 'code', 'memory', 'reading', 'reasoning'];
 
-  const uiReports = [
-    GestaltHierarchyAgent.auditUI(),
-    BehavioralHabitAgent.auditUI(),
-    CognitiveFrictionAgent.auditUI(),
-    NeuroAestheticAgent.auditUI(),
-  ];
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
       {/* Page Title */}
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white mb-2">Cognitive Analytics & Neuro-Design</h1>
+        <h1 className="text-3xl font-extrabold text-white mb-2">Progress</h1>
         <p className="text-gray-400 text-sm">
-          Track your long-term Sharpness trajectory, 6-axis skill balance, and behavioral progression toward Black Belt mastery.
+          Track your Sharpness trajectory, skill balance across all six categories, and belt progression.
         </p>
       </div>
 
@@ -47,7 +39,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ progress, sessionH
         <div className="glass-panel p-6 border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-slate-900/70 flex flex-col items-center justify-center text-center shadow-xl">
           <SharpnessGauge score={progress.sharpnessScore} maxScore={1000} size={150} />
           <p className="text-xs text-gray-300 mt-4 font-medium">
-            Top 12% among knowledge workers. Based on speed, accuracy & rep difficulty.
+            Based on your accuracy, speed, and rep difficulty over time.
           </p>
         </div>
 
@@ -139,40 +131,6 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ progress, sessionH
           </div>
         </div>
 
-      </div>
-
-      {/* UI Psychology Subagent Audit Panel */}
-      <div className="glass-panel p-6 mb-8 border-violet-500/30 shadow-2xl">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <Eye className="w-5 h-5 text-violet-400" />
-          UI Psychology & Behavioral Subagent Audit Reports
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {uiReports.map((report, idx) => (
-            <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-indigo-400" /> {report.agentName}
-                </span>
-                <span className="text-xs font-extrabold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30">
-                  {report.score}% Score
-                </span>
-              </div>
-              <p className="text-[11px] text-violet-300 font-semibold uppercase tracking-wider">
-                Focus: {report.psychologicalFocus}
-              </p>
-              <ul className="space-y-1.5 text-xs text-gray-300">
-                {report.recommendations.map((rec, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <Shield className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
-                    <span>{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Belt Ladder Table */}

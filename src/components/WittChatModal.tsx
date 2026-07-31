@@ -20,7 +20,7 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
     {
       id: '1',
       sender: 'witt',
-      text: `Hello! I'm Witt, your AI Cognitive Companion. Your current Sharpness is ${progress.sharpnessScore} with a ${progress.streakDays}-day streak. Ask me anything about cognitive training, formal logic fallacies, code scoping, or how to avoid AI dependency!`,
+      text: `Hi! I'm Witt, your training coach. Your current Sharpness is ${progress.sharpnessScore} with a ${progress.streakDays}-day streak. Ask me about streaks, logical fallacies, code scoping, or writing fluff — I'll do my best with a few quick tips!`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -42,16 +42,17 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
     setInputText('');
 
     setTimeout(() => {
-      let replyText = `Great question! In cognitive maintenance, daily reps across Writing, Logic, and Code protect your independent processing capacity against AI offloading debt.`;
+      let replyText =
+        `Nice question. Short daily reps in writing, logic, and code help you keep solving things yourself instead of always asking a tool first.`;
 
       if (promptLower.includes('streak') || promptLower.includes('belt')) {
-        replyText = `You currently hold the ${progress.beltRank} with a ${progress.streakDays}-day streak! Keep completing daily sets to unlock Purple and Black Belt mastery.`;
+        replyText = `You're on ${progress.beltRank} with a ${progress.streakDays}-day streak. Finish today's set to keep it going.`;
       } else if (promptLower.includes('fallacy') || promptLower.includes('logic')) {
-        replyText = `Formal fallacies (like Affirming the Consequent or Ad Hominem) occur when an argument's structural rules break down. Practicing our Logic games trains dual-process reasoning to catch hidden fallacies in AI text!`;
+        replyText = `Watch for weak arguments — circular reasoning, straw men, and attacks on the person instead of the claim. The logic games are good practice for spotting those.`;
       } else if (promptLower.includes('code') || promptLower.includes('scope')) {
-        replyText = `Code tracing exercises strengthen frontoparietal mental execution. Reading un-summarized code closures prevents Copilot-induced code reading decay!`;
+        replyText = `Trace code by hand before you trust a suggested fix. Closures and shared loop variables still trip people up — our code drills target that.`;
       } else if (promptLower.includes('fluff') || promptLower.includes('writing')) {
-        replyText = `Cutting AI fluff exercises your Broca & inferior frontal gyrus. Converting passive corporate filler into active, dense sentences keeps your drafting sharp!`;
+        replyText = `Cut filler. Prefer short active sentences over corporate padding. The writing drills train that habit.`;
       }
 
       const wittReply: ChatMessage = {
@@ -77,9 +78,9 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
             </div>
             <div>
               <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-                Witt AI Coach <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                Witt Coach <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               </h3>
-              <span className="text-[10px] text-emerald-400 font-semibold">● Active Companion</span>
+              <span className="text-[10px] text-emerald-400 font-semibold">● Keyword-based coach tips</span>
             </div>
           </div>
 

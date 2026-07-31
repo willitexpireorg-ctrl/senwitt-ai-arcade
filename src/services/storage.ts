@@ -11,7 +11,9 @@ const safeGetItem = (key: string): string | null => {
     if (typeof localStorage !== 'undefined') {
       return localStorage.getItem(key);
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('storage get failed', e);
+  }
   return memoryStorage.get(key) || null;
 };
 
@@ -21,7 +23,9 @@ const safeSetItem = (key: string, value: string): void => {
       localStorage.setItem(key, value);
       return;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('storage set failed', e);
+  }
   memoryStorage.set(key, value);
 };
 
@@ -43,18 +47,13 @@ const INITIAL_SKILLS: Record<SkillCategory, SkillMastery> = {
 };
 
 const DEFAULT_PROGRESS: UserProgress = {
-  sharpnessScore: 720,
-  sharpnessHistory: [
-    { date: getLocalDateString(new Date(Date.now() - 86400000 * 4)), score: 700 },
-    { date: getLocalDateString(new Date(Date.now() - 86400000 * 3)), score: 705 },
-    { date: getLocalDateString(new Date(Date.now() - 86400000 * 2)), score: 712 },
-    { date: getLocalDateString(new Date(Date.now() - 86400000 * 1)), score: 720 },
-  ],
-  totalSessions: 4,
-  streakDays: 4,
-  lastSessionDate: getLocalDateString(new Date(Date.now() - 86400000 * 1)),
-  streakShields: 2,
-  beltRank: 'Yellow Belt (Focus Practitioner)',
+  sharpnessScore: 700,
+  sharpnessHistory: [],
+  totalSessions: 0,
+  streakDays: 0,
+  lastSessionDate: null,
+  streakShields: 0,
+  beltRank: 'White Belt (Initiate)',
   skills: INITIAL_SKILLS,
   completedSetIds: [],
 };
@@ -66,6 +65,7 @@ export const getStoredProgress = (): UserProgress => {
     const parsed = JSON.parse(raw);
     return { ...DEFAULT_PROGRESS, ...parsed };
   } catch (e) {
+    console.warn('Failed to parse stored progress', e);
     return DEFAULT_PROGRESS;
   }
 };
@@ -84,6 +84,7 @@ export const getSessionHistory = (): SessionResult[] => {
     if (!raw) return [];
     return JSON.parse(raw);
   } catch (e) {
+    console.warn('Failed to parse session history', e);
     return [];
   }
 };

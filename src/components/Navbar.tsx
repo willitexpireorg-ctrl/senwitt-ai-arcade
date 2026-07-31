@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, Shield, Award, Zap, Brain, Volume2, VolumeX, Grid, Bot, Gamepad2, MessageSquare, Download, Mic } from 'lucide-react';
+import { Flame, Award, Brain, Volume2, VolumeX, Gamepad2, MessageSquare, History } from 'lucide-react';
 import type { UserProgress } from '../types';
 import { isSoundMuted, setSoundMuted, getSoundVolume, setSoundVolume, playClickSound } from '../services/sound';
 
@@ -7,20 +7,23 @@ interface NavbarProps {
   progress: UserProgress;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  onLaunchMemoryGame: () => void;
   onOpenWittChat: () => void;
   onOpenHistoryModal: () => void;
-  onOpenVoiceDrill: () => void;
 }
+
+const NAV_TABS = [
+  { id: 'dashboard', label: 'Daily Set', icon: null },
+  { id: 'arcade', label: 'Games', icon: Gamepad2 },
+  { id: 'skills', label: 'Skill Library', icon: null },
+  { id: 'progress', label: 'Progress', icon: null },
+];
 
 export const Navbar: React.FC<NavbarProps> = ({
   progress,
   activeTab,
   setActiveTab,
-  onLaunchMemoryGame,
   onOpenWittChat,
   onOpenHistoryModal,
-  onOpenVoiceDrill,
 }) => {
   const [muted, setMuted] = useState<boolean>(isSoundMuted());
   const [volume, setVol] = useState<number>(getSoundVolume());
@@ -49,188 +52,151 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="w-full border-b border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        
-        {/* Brand Logo */}
-        <div 
+    <header
+      style={{
+        background: 'rgba(6, 10, 18, 0.9)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(20px) saturate(1.3)',
+        WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+      }}
+      className="w-full sticky top-0 z-50"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between"
+        style={{ height: '64px' }}>
+
+        {/* ── Brand Logo ─────────────────────────────────────── */}
+        <div
           tabIndex={0}
           role="button"
           aria-label="Go to Dashboard Home"
-          onClick={() => handleTabClick('dashboard')} 
+          onClick={() => handleTabClick('dashboard')}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleTabClick('dashboard')}
-          className="flex items-center gap-3 cursor-pointer group focus-ring rounded-xl p-1"
+          className="flex items-center gap-3 cursor-pointer group focus-ring rounded-xl p-1 shrink-0"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <Brain className="w-6 h-6 text-white animate-pulse-glow" />
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
+            style={{ background: 'linear-gradient(135deg, #0891b2 0%, #059669 100%)' }}
+          >
+            <Brain className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <span className="font-heading font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
-              SENWITT <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-semibold border border-indigo-500/30">PHASE 2</span>
+          <div className="hidden sm:block">
+            <span
+              style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.1rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#f0f4ff' }}
+            >
+              SENWITT
             </span>
-            <p className="text-[10px] text-[var(--text-muted)] tracking-wider uppercase font-medium">Cognitive OS</p>
+            <p style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>
+              Daily Brain Training
+            </p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav aria-label="Main Application Navigation" className="hidden lg:flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-          <button
-            onClick={() => handleTabClick('dashboard')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all focus-ring ${
-              activeTab === 'dashboard'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Daily Set
-          </button>
-
-          <button
-            onClick={() => handleTabClick('arcade')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 font-semibold focus-ring ${
-              activeTab === 'arcade'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-indigo-300 hover:text-white hover:bg-indigo-500/20'
-            }`}
-          >
-            <Gamepad2 className="w-3.5 h-3.5 text-indigo-400" />
-            <span>15 Games</span>
-          </button>
-
-          <button
-            onClick={onOpenVoiceDrill}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-all flex items-center gap-1 border border-rose-500/30 bg-rose-500/10 focus-ring"
-          >
-            <Mic className="w-3.5 h-3.5 text-rose-400" />
-            <span>Voice Drill</span>
-          </button>
-
-          <button
-            onClick={() => handleTabClick('skills')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all focus-ring ${
-              activeTab === 'skills'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Skill Library
-          </button>
-
-          <button
-            onClick={() => handleTabClick('studio')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 focus-ring ${
-              activeTab === 'studio'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-violet-300 hover:text-white hover:bg-violet-500/20'
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5 text-violet-400" />
-            <span>Agent Studio</span>
-          </button>
-
-          <button
-            onClick={onLaunchMemoryGame}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-all flex items-center gap-1 border border-cyan-500/30 bg-cyan-500/10 focus-ring"
-          >
-            <Grid className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Spatial Game</span>
-          </button>
-
-          <button
-            onClick={() => handleTabClick('progress')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all focus-ring ${
-              activeTab === 'progress'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Analytics & Belt
-          </button>
+        {/* ── Navigation Tabs ─────────────────────────────────── */}
+        <nav
+          aria-label="Main Application Navigation"
+          className="hidden lg:flex items-center gap-0.5 p-1 rounded-2xl"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          {NAV_TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className="relative px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 focus-ring flex items-center gap-1.5"
+                style={{
+                  background: isActive ? 'rgba(6,182,212,0.85)' : 'transparent',
+                  color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontWeight: isActive ? 700 : 500,
+                }}
+              >
+                {Icon && <Icon className="w-3.5 h-3.5" style={{ color: isActive ? 'white' : undefined }} />}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right Action Controls */}
+        {/* ── Right Controls ──────────────────────────────────── */}
         <div className="flex items-center gap-2">
-          
-          {/* Ask Witt AI Coach Button */}
+
+          {/* Ask Witt (small icon) */}
           <button
             onClick={onOpenWittChat}
-            aria-label="Open Witt AI Coach Companion Chat"
-            className="px-3 py-1.5 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-violet-500/20 focus-ring"
+            title="Ask Witt"
+            aria-label="Open Witt coach tips chat"
+            className="p-2 rounded-xl transition-all focus-ring"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(196,181,253,0.85)' }}
           >
-            <MessageSquare className="w-3.5 h-3.5 text-violet-300" />
-            <span className="hidden sm:inline">Ask Witt</span>
+            <MessageSquare className="w-4 h-4" />
           </button>
 
-          {/* Export Data & History Button */}
+          {/* History */}
           <button
             onClick={onOpenHistoryModal}
-            title="Export Session Data & CSV"
-            aria-label="Open Session History and Data Export Modal"
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-ring"
+            title="Session History & Export"
+            aria-label="Open session history and data export"
+            className="p-2 rounded-xl transition-all focus-ring"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
           >
-            <Download className="w-4 h-4 text-gray-300" />
+            <History className="w-4 h-4" />
           </button>
 
-          {/* Sound Toggle & Volume Slider Popover */}
+          {/* Sound Toggle */}
           <div className="relative flex items-center">
             <button
               onClick={handleToggleSound}
               onMouseEnter={() => setShowVolumeSlider(true)}
               aria-label={muted ? 'Unmute Audio Effects' : 'Mute Audio Effects'}
-              title={muted ? 'Unmute Sound FX' : 'Mute Sound FX'}
-              className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-ring"
+              className="p-2 rounded-xl transition-all focus-ring"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              {muted ? <VolumeX className="w-4 h-4 text-gray-500" /> : <Volume2 className="w-4 h-4 text-indigo-400" />}
+              {muted
+                ? <VolumeX className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                : <Volume2 className="w-4 h-4" style={{ color: '#67e8f9' }} />
+              }
             </button>
 
             {showVolumeSlider && (
-              <div 
+              <div
                 onMouseLeave={() => setShowVolumeSlider(false)}
-                className="absolute top-12 right-0 glass-panel p-3 border border-indigo-500/30 rounded-xl flex items-center gap-2 z-50 shadow-2xl animate-fadeIn"
+                className="absolute top-12 right-0 glass-panel p-3 rounded-xl flex items-center gap-2 z-50 animate-fadeIn"
               >
-                <Volume2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <Volume2 className="w-3.5 h-3.5 shrink-0" style={{ color: '#67e8f9' }} />
                 <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
+                  type="range" min="0" max="1" step="0.05"
                   value={muted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="w-24 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  className="w-24 h-1.5 rounded-lg appearance-none cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.15)', accentColor: '#06b6d4' }}
                 />
-                <span className="text-[10px] font-mono text-indigo-300 w-8 font-bold">
+                <span className="text-[10px] font-mono w-8 font-bold" style={{ color: '#67e8f9' }}>
                   {muted ? '0%' : `${Math.round(volume * 100)}%`}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Sharpness Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-            <Zap className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400/20" />
-            <span>{progress.sharpnessScore}</span>
-          </div>
-
-          {/* Streak Flame */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
-            <Flame className="w-3.5 h-3.5 fill-amber-400" />
+          {/* Streak Pill */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
+            style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', color: '#fbbf24' }}
+          >
+            <Flame className="w-3.5 h-3.5" style={{ fill: '#f59e0b' }} />
             <span>{progress.streakDays}d</span>
-            {progress.streakShields > 0 && (
-              <span className="flex items-center text-[10px] text-emerald-400 gap-0.5 ml-0.5">
-                <Shield className="w-3 h-3 fill-emerald-400/20" />
-                {progress.streakShields}
-              </span>
-            )}
           </div>
 
-          {/* Belt Rank Pill */}
-          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-300 text-xs font-medium">
-            <Award className="w-4 h-4 text-violet-400" />
+          <div
+            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#6ee7b7' }}
+          >
+            <Award className="w-3.5 h-3.5" style={{ color: '#34d399' }} />
             <span>{progress.beltRank.split(' ')[0]}</span>
           </div>
 
         </div>
-
       </div>
     </header>
   );

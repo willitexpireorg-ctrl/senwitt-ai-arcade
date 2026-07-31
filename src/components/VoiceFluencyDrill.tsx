@@ -81,7 +81,7 @@ export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose })
               <Volume2 className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-extrabold text-indigo-400 tracking-wider">Phase 2 Spoken Drill</span>
+              <span className="text-[10px] uppercase font-extrabold text-indigo-400 tracking-wider">Speech Drill</span>
               <h2 className="text-xl font-extrabold text-white">Voice & Speech Fluency Drill</h2>
             </div>
           </div>
@@ -140,7 +140,7 @@ export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose })
                 <CheckCircle2 className="w-4 h-4" /> Conciseness Score: {drillResult.concisenessScore}%
               </span>
               <span className="text-xs font-bold text-violet-300 px-2.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
-                Broca Level: {drillResult.brocaActivationLevel}
+                Fluency Level: {drillResult.brocaActivationLevel}
               </span>
             </div>
 

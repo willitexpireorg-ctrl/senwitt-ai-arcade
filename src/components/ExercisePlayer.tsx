@@ -50,7 +50,7 @@ export const ExercisePlayer: React.FC<ExercisePlayerProps> = ({ items, setMode, 
   // Keyboard Shortcuts (1, 2, 3, 4, Enter, Space)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['Input', 'Textarea'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
 
       if (!isAnswered && currentItem?.options) {
         if (e.key === '1' && currentItem.options[0]) handleSelectOption(currentItem.options[0]);

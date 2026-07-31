@@ -5,40 +5,41 @@ import { SkillCatalog } from './components/SkillCatalog';
 import { AnalyticsPage } from './components/AnalyticsPage';
 import { ExercisePlayer } from './components/ExercisePlayer';
 import { SpatialMemoryGame } from './components/SpatialMemoryGame';
-import { AgentGeneratorStudio } from './components/AgentGeneratorStudio';
 import { GamesArcade } from './components/GamesArcade';
 import { SessionSummaryModal } from './components/SessionSummaryModal';
 import { WittChatModal } from './components/WittChatModal';
 import { SessionHistoryModal } from './components/SessionHistoryModal';
 import { VoiceFluencyDrill } from './components/VoiceFluencyDrill';
-import { ThreeBackground } from './components/ThreeBackground';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DualNBackGame } from './components/DualNBackGame';
 import { StroopDrill } from './components/StroopDrill';
 import { LogicInferenceDrill } from './components/LogicInferenceDrill';
-import type { UserProgress, SessionResult, SetMode, SkillCategory, ExerciseItem } from './types';
-import { getStoredProgress, recordSessionCompletion, getSessionHistory } from './services/storage';
-import { EXERCISE_BANK, getDailySetForMode } from './data/exerciseBank';
-import { generateProceduralMathItem, generateProceduralCodeItem } from './services/proceduralGenerator';
+import type { UserProgress, SessionResult, SetMode, SkillCategory, AttemptResult } from './types';
+import { getStoredProgress, recordSessionCompletion, getSessionHistory, getLocalDateString } from './services/storage';
+import { getDailySetForMode, getSkillPracticeSet } from './data/exerciseBank';
 import type { GameSpec } from './services/researchAgent';
 import { Phase2MultiAgentOrchestrator } from './services/phase2Orchestrator';
+
+const ARCADE_SKILL: Record<string, SkillCategory> = {
+  spatial: 'memory',
+  dual_nback: 'memory',
+  stroop: 'reasoning',
+  logic_deduction: 'reasoning',
+};
 
 export const App: React.FC = () => {
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress);
   const [sessionHistory, setSessionHistory] = useState<SessionResult[]>(getSessionHistory);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  // Multi-Agent Orchestrator Framework Instance
-  const phase2Orchestrator = useMemo(() => new Phase2MultiAgentOrchestrator(0.2), []);
-
-  // Exercise bank state
-  const [customBank, setCustomBank] = useState<ExerciseItem[]>(EXERCISE_BANK);
+  // Adaptive difficulty calibration (internal ability estimate, not user-facing)
+  const abilityOrchestrator = useMemo(() => new Phase2MultiAgentOrchestrator(0.2), []);
 
   // Active workout session state
   const [activeSessionMode, setActiveSessionMode] = useState<SetMode | null>(null);
-  const [activeSessionItems, setActiveSessionItems] = useState<ExerciseItem[]>([]);
+  const [activeSessionItems, setActiveSessionItems] = useState<ReturnType<typeof getDailySetForMode>>([]);
   const [activeGameMode, setActiveGameMode] = useState<'spatial' | 'dual_nback' | 'stroop' | 'logic_deduction' | null>(null);
-  
+
   // Modals state
   const [completedSession, setCompletedSession] = useState<SessionResult | null>(null);
   const [isWittChatOpen, setIsWittChatOpen] = useState<boolean>(false);
@@ -52,28 +53,16 @@ export const App: React.FC = () => {
 
   const handleStartSet = (mode: SetMode) => {
     const baseItems = getDailySetForMode(mode);
-    const proceduralItems = [generateProceduralMathItem(), generateProceduralCodeItem()];
-    const rawItems = [...baseItems, ...proceduralItems].slice(0, mode === 'coffee_break' ? 3 : mode === 'weekend_long' ? 8 : 5);
-
-    // Phase 2 IRT Flow-State Queue Calibration
-    const calibratedItems = phase2Orchestrator.filterQueueForOptimalFlow(rawItems);
-
+    const calibratedItems = abilityOrchestrator.filterQueueForOptimalFlow(baseItems);
     setActiveSessionItems(calibratedItems);
     setActiveSessionMode(mode);
     setActiveGameMode(null);
   };
 
   const handleStartSkillPractice = (skill: SkillCategory) => {
-    const matching = customBank.filter((item) => item.category === skill);
-    const items = matching.length > 0 ? matching.slice(0, 3) : customBank.slice(0, 3);
-    setActiveSessionItems(items);
+    setActiveSessionItems(getSkillPracticeSet(skill, 3));
     setActiveSessionMode('coffee_break');
     setActiveGameMode(null);
-  };
-
-  const handleLaunchSpatialGame = () => {
-    setActiveGameMode('spatial');
-    setActiveSessionMode(null);
   };
 
   const handleLaunchArcadeGame = (game: GameSpec) => {
@@ -89,43 +78,48 @@ export const App: React.FC = () => {
     } else if (game.mechanicType === 'logic_deduction') {
       setActiveGameMode('logic_deduction');
       setActiveSessionMode(null);
+    } else if (game.mechanicType === 'voice_drill') {
+      setIsVoiceDrillOpen(true);
     } else {
-      const matching = customBank.filter((item) => item.category === game.category);
-      const items = matching.length > 0 ? matching.slice(0, 3) : customBank.slice(0, 3);
-      setActiveSessionItems(items);
+      setActiveSessionItems(getSkillPracticeSet(game.category, 3));
       setActiveSessionMode('coffee_break');
     }
   };
 
   const handleCustomGameComplete = (scoreEarned: number, modeName: string) => {
     setActiveGameMode(null);
-    const fakeSession: SessionResult = {
+    const category = ARCADE_SKILL[modeName] ?? 'memory';
+    const correctCount = Math.min(4, Math.max(0, Math.floor(scoreEarned / 30)));
+    const totalItems = 4;
+    const timePerAttempt = 7500;
+    const attempts: AttemptResult[] = Array.from({ length: totalItems }, (_, i) => ({
+      itemId: `${modeName}-rep-${i + 1}`,
+      category,
+      isCorrect: i < correctCount,
+      timeSpentMs: timePerAttempt,
+      scoreEarned: i < correctCount ? Math.max(10, Math.floor(scoreEarned / Math.max(1, correctCount))) : 0,
+      userAnswer: i < correctCount ? 'hit' : 'miss',
+      explanation: `${modeName} arcade round`,
+      timestamp: new Date().toISOString(),
+    }));
+
+    const session: SessionResult = {
       id: `${modeName}-${Date.now()}`,
       mode: 'coffee_break',
-      date: new Date().toISOString().split('T')[0],
-      totalItems: 4,
-      correctCount: Math.min(4, Math.max(1, Math.floor(scoreEarned / 30))),
-      totalTimeSpentMs: 30000,
-      sharpnessDelta: Math.max(10, Math.floor(scoreEarned / 10)),
+      date: getLocalDateString(),
+      totalItems,
+      correctCount,
+      totalTimeSpentMs: totalItems * timePerAttempt,
+      sharpnessDelta: Math.max(5, Math.floor(scoreEarned / 10)),
       finalSharpness: 0,
-      attempts: [],
+      attempts,
     };
-    handleCompleteSession(fakeSession);
-  };
-
-  const handleInjectAgentExercises = (newItems: ExerciseItem[]) => {
-    setCustomBank((prev) => [...newItems, ...prev]);
-  };
-
-  const handleTestSingleExercise = (item: ExerciseItem) => {
-    setActiveSessionItems([item]);
-    setActiveSessionMode('coffee_break');
+    handleCompleteSession(session);
   };
 
   const handleCompleteSession = (result: SessionResult) => {
-    // Calibrate IRT theta profile for each rep
     result.attempts.forEach((att) => {
-      phase2Orchestrator.processRepResult(att.isCorrect, att.timeSpentMs);
+      abilityOrchestrator.processRepResult(att.isCorrect, att.timeSpentMs);
     });
 
     const updated = recordSessionCompletion(result);
@@ -142,26 +136,17 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-white flex flex-col selection:bg-indigo-500 selection:text-white relative">
-      
-      {/* Interactive 3D Three.js Particle & Constellation Background */}
-      <ThreeBackground />
-
-      {/* Top Navigation */}
+    <div className="min-h-screen bg-[var(--bg-primary)] text-white flex flex-col selection:bg-cyan-500/40 selection:text-white relative">
       <Navbar
         progress={progress}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onLaunchMemoryGame={handleLaunchSpatialGame}
         onOpenWittChat={() => setIsWittChatOpen(true)}
         onOpenHistoryModal={() => setIsHistoryModalOpen(true)}
-        onOpenVoiceDrill={() => setIsVoiceDrillOpen(true)}
       />
 
-      {/* Main Content Area */}
       <main className="flex-1 pb-16 relative z-10">
         <ErrorBoundary>
-          {/* Active Mini-Game Overlays */}
           {activeGameMode === 'spatial' ? (
             <SpatialMemoryGame
               onComplete={(s) => handleCustomGameComplete(s, 'spatial')}
@@ -183,7 +168,6 @@ export const App: React.FC = () => {
               onCancel={handleCancelSession}
             />
           ) : activeSessionMode && activeSessionItems.length > 0 ? (
-            /* Active Workout Session Overlay */
             <ExercisePlayer
               items={activeSessionItems}
               setMode={activeSessionMode}
@@ -197,27 +181,17 @@ export const App: React.FC = () => {
                   progress={progress}
                   onStartSet={handleStartSet}
                   onSelectSkill={handleStartSkillPractice}
-                  onTestCustomRep={handleTestSingleExercise}
                 />
               )}
 
               {activeTab === 'arcade' && (
-                <GamesArcade
-                  onLaunchGame={handleLaunchArcadeGame}
-                />
+                <GamesArcade onLaunchGame={handleLaunchArcadeGame} />
               )}
 
               {activeTab === 'skills' && (
                 <SkillCatalog
                   progress={progress}
                   onStartSkillPractice={handleStartSkillPractice}
-                />
-              )}
-
-              {activeTab === 'studio' && (
-                <AgentGeneratorStudio
-                  onInjectExercises={handleInjectAgentExercises}
-                  onTestExercise={handleTestSingleExercise}
                 />
               )}
 
@@ -232,7 +206,6 @@ export const App: React.FC = () => {
         </ErrorBoundary>
       </main>
 
-      {/* Session Completion Modal */}
       {completedSession && (
         <SessionSummaryModal
           session={completedSession}
@@ -241,7 +214,6 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Witt Coach Chat Modal */}
       {isWittChatOpen && (
         <WittChatModal
           progress={progress}
@@ -249,7 +221,6 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* History & CSV Data Export Modal */}
       {isHistoryModalOpen && (
         <SessionHistoryModal
           history={sessionHistory}
@@ -262,18 +233,13 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Web Speech Voice Fluency Drill Modal */}
       {isVoiceDrillOpen && (
-        <VoiceFluencyDrill
-          onClose={() => setIsVoiceDrillOpen(false)}
-        />
+        <VoiceFluencyDrill onClose={() => setIsVoiceDrillOpen(false)} />
       )}
 
-      {/* Footer */}
       <footer className="w-full border-t border-[var(--border-color)] py-6 text-center text-xs text-gray-500 relative z-10">
-        <p>© 2026 SENWITT AI PHASE 2 — IRT Adaptive Engine & Voice Speech Fluency</p>
+        <p>© 2026 SENWITT — 5 minutes a day to keep your thinking sharp.</p>
       </footer>
-
     </div>
   );
 };
