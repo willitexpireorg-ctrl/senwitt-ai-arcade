@@ -55,7 +55,12 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
     const seqLength = currentRound + 2;
     const newSeq: number[] = [];
     for (let i = 0; i < seqLength; i++) {
-      newSeq.push(Math.floor(Math.random() * (gridSize * gridSize)));
+      let nextTile = Math.floor(Math.random() * (gridSize * gridSize));
+      // Avoid consecutive duplicate tiles to eliminate player confusion
+      while (i > 0 && nextTile === newSeq[i - 1]) {
+        nextTile = Math.floor(Math.random() * (gridSize * gridSize));
+      }
+      newSeq.push(nextTile);
     }
     setSequence(newSeq);
 
@@ -76,7 +81,7 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
         setIsPlayingSequence(false);
         setStatus('repeat');
       }
-    }, 750);
+    }, 800);
   };
 
   const handleTileClick = (tileIdx: number) => {
@@ -92,10 +97,11 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
       setStatus('fail');
       addTimeout(() => {
         onComplete(score);
-      }, 1400);
+      }, 1600);
       return;
     }
 
+    // Single step matched correctly
     if (nextUserSeq.length === sequence.length) {
       playCorrectSound();
       const points = round * 30;
@@ -106,11 +112,12 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
         setStatus('success');
         addTimeout(() => {
           onComplete(score + points + 50);
-        }, 1400);
+        }, 1600);
       } else {
+        setStatus('success');
         addTimeout(() => {
           setRound((r) => r + 1);
-        }, 800);
+        }, 1200);
       }
     }
   };
@@ -145,14 +152,17 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
         </div>
 
         <h2 className="text-xl font-bold text-white mb-2">
-          {status === 'watch' && 'Watch the Tile Pattern...'}
-          {status === 'repeat' && 'Repeat the Tile Sequence!'}
-          {status === 'success' && 'Round Mastery Achieved! 🎉'}
-          {status === 'fail' && 'Sequence Broken!'}
+          {status === 'watch' && 'Watch the Flashing Sequence...'}
+          {status === 'repeat' && `Tap Tiles in Order (${userSequence.length}/${sequence.length})`}
+          {status === 'success' && (round >= 4 ? 'Exercise Completed! 🎉' : `Round ${round} Cleared! ✨`)}
+          {status === 'fail' && 'Sequence Mis-tapped!'}
         </h2>
 
         <p className="text-xs text-gray-300 mb-6">
-          {status === 'watch' ? 'Observe the order in which the tiles illuminate.' : 'Tap the grid tiles in the exact order shown.'}
+          {status === 'watch' && 'Memorize the exact order of glowing tiles.'}
+          {status === 'repeat' && `Tap each tile once in the exact order shown (${sequence.length - userSequence.length} taps remaining).`}
+          {status === 'success' && `Great job! Earned +${round * 30} PTS!`}
+          {status === 'fail' && `Wrong tile tapped on step ${userSequence.length} of ${sequence.length}.`}
         </p>
 
         {/* 3x3 Interactive Grid */}
@@ -164,15 +174,15 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
             let tileClass = "aspect-square rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-center font-bold text-lg ";
 
             if (isActive) {
-              tileClass += "bg-indigo-500 border-indigo-300 shadow-xl shadow-indigo-500/50 scale-105";
+              tileClass += "bg-cyan-400 border-cyan-200 shadow-xl shadow-cyan-400/60 scale-105";
             } else if (status === 'fail') {
               tileClass += "bg-rose-500/20 border-rose-500/40 text-rose-300";
             } else if (status === 'success') {
-              tileClass += "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 scale-105";
+              tileClass += "bg-emerald-500/30 border-emerald-400/60 scale-105";
             } else if (isUserSelected) {
-              tileClass += "bg-cyan-500/30 border-cyan-400 text-cyan-200";
+              tileClass += "bg-indigo-500/40 border-indigo-300 shadow-md shadow-indigo-500/30";
             } else {
-              tileClass += "bg-white/5 border-white/10 hover:bg-white/15 hover:border-white/20 text-white/50";
+              tileClass += "bg-white/5 border-white/10 hover:bg-white/15 hover:border-white/20";
             }
 
             return (
@@ -182,7 +192,15 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
                 onClick={() => handleTileClick(idx)}
                 className={tileClass}
               >
-                {isActive || isUserSelected ? (idx + 1) : ''}
+                {/* Tile indicator icon or clean spatial tile glow */}
+                {isActive && (
+                  <span className="w-4 h-4 rounded-full bg-white shadow-lg animate-ping" />
+                )}
+                {isUserSelected && (
+                  <span className="text-xs font-semibold text-indigo-200">
+                    #{userSequence.lastIndexOf(idx) + 1}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -190,14 +208,16 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
 
         {/* Status Indicator */}
         {status === 'success' && (
-          <div className="flex items-center justify-center gap-2 text-emerald-400 text-sm font-bold animate-fadeIn">
-            <CheckCircle2 className="w-5 h-5" /> Perfect Spatial Recall!
+          <div className="flex items-center justify-center gap-2 text-emerald-400 text-sm font-bold animate-fadeIn py-2 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <span>{round >= 4 ? 'All 4 Rounds Mastered!' : `Round ${round} Completed! (+${round * 30} PTS)`}</span>
           </div>
         )}
 
         {status === 'fail' && (
-          <div className="flex items-center justify-center gap-2 text-rose-400 text-sm font-bold animate-fadeIn">
-            <XCircle className="w-5 h-5" /> Sequence Error
+          <div className="flex items-center justify-center gap-2 text-rose-400 text-sm font-bold animate-fadeIn py-2 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20">
+            <XCircle className="w-5 h-5 text-rose-400" />
+            <span>Sequence Error — Final Score: {score}</span>
           </div>
         )}
 
