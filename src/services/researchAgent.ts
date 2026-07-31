@@ -9,7 +9,7 @@ export interface GameSpec {
   neuralTarget: string;
   difficultyRange: 'Tier 1-5';
   estimatedDuration: string;
-  mechanicType: 'visual_grid' | 'choice_quiz' | 'sequence_memory' | 'math_solver';
+  mechanicType: 'visual_grid' | 'choice_quiz' | 'sequence_memory' | 'math_solver' | 'dual_nback' | 'stroop' | 'logic_deduction';
 }
 
 export class ResearchAgent {
@@ -25,6 +25,39 @@ export class ResearchAgent {
         difficultyRange: 'Tier 1-5',
         estimatedDuration: '2 Mins',
         mechanicType: 'visual_grid'
+      },
+      {
+        id: 'game-16',
+        title: 'Dual N-Back Working Memory',
+        category: 'memory',
+        description: 'Compare current visual grid position and audio letter to N steps back.',
+        scientificRationale: 'Gold-standard fluid intelligence and working memory updating task.',
+        neuralTarget: 'Dorsolateral Prefrontal Cortex & Basal Ganglia',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '3 Mins',
+        mechanicType: 'dual_nback'
+      },
+      {
+        id: 'game-17',
+        title: 'Stroop Executive Speed',
+        category: 'reasoning',
+        description: 'Inhibit reading automaticity to rapidly select font ink color.',
+        scientificRationale: 'Trains response inhibition and cognitive conflict resolution.',
+        neuralTarget: 'Anterior Cingulate Cortex & Pre-SMA',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'stroop'
+      },
+      {
+        id: 'game-18',
+        title: 'Syllogism Logic Deduction',
+        category: 'reasoning',
+        description: 'Derive necessary conclusions from multi-premise formal logic statements.',
+        scientificRationale: 'Exercises deductive validity checking and logical reasoning.',
+        neuralTarget: 'Left Inferior Frontal Gyrus',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '3 Mins',
+        mechanicType: 'logic_deduction'
       },
       {
         id: 'game-2',

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { Zap, Flame, Award, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
 import type { SessionResult, UserProgress } from '../types';
 
@@ -14,6 +15,19 @@ export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
   onClose,
 }) => {
   const accuracyPct = Math.round((session.correctCount / session.totalItems) * 100);
+
+  useEffect(() => {
+    try {
+      confetti({
+        particleCount: 70,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#6366f1', '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981']
+      });
+    } catch (e) {
+      // Fallback gracefully if confetti fails
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">

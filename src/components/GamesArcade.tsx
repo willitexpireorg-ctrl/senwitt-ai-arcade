@@ -77,11 +77,21 @@ export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame }) => {
       </div>
 
       {/* 15 Games Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-1000">
         {filteredGames.map((game, idx) => (
           <div
             key={game.id}
-            className="glass-panel p-6 border-white/10 hover:border-indigo-500/40 bg-gradient-to-br from-indigo-950/30 to-slate-900/60 flex flex-col justify-between group hover:scale-[1.01] transition-all duration-200 shadow-xl"
+            onMouseMove={(e) => {
+              const card = e.currentTarget;
+              const rect = card.getBoundingClientRect();
+              const x = e.clientX - rect.left - rect.width / 2;
+              const y = e.clientY - rect.top - rect.height / 2;
+              card.style.transform = `perspective(1000px) rotateX(${-y / 25}deg) rotateY(${x / 25}deg) scale3d(1.02, 1.02, 1.02)`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+            }}
+            className="glass-panel p-6 border-white/10 hover:border-indigo-500/50 bg-gradient-to-br from-indigo-950/30 to-slate-900/60 flex flex-col justify-between group transition-all duration-200 shadow-xl relative"
           >
             <div>
               

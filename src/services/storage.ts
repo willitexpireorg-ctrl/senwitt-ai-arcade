@@ -184,3 +184,31 @@ export const recordSessionCompletion = (session: SessionResult): UserProgress =>
 
   return updatedProgress;
 };
+
+export const exportUserDataJson = (): string => {
+  const progress = getStoredProgress();
+  const history = getSessionHistory();
+  return JSON.stringify({
+    version: '1.0',
+    exportDate: new Date().toISOString(),
+    progress,
+    history
+  }, null, 2);
+};
+
+export const importUserDataJson = (jsonString: string): boolean => {
+  try {
+    const data = JSON.parse(jsonString);
+    if (data && data.progress) {
+      saveUserProgress(data.progress);
+      if (Array.isArray(data.history)) {
+        safeSetItem(STORAGE_KEY_SESSIONS, JSON.stringify(data.history));
+      }
+      return true;
+    }
+  } catch (e) {
+    console.error('Failed to import user data:', e);
+  }
+  return false;
+};
+

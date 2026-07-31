@@ -1,5 +1,6 @@
 let audioCtx: AudioContext | null = null;
 let soundMuted = false;
+let soundVolume = 0.8;
 
 const getAudioContext = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;
@@ -43,10 +44,26 @@ export const isSoundMuted = (): boolean => {
   return soundMuted;
 };
 
+export const setSoundVolume = (volume: number) => {
+  soundVolume = Math.min(1, Math.max(0, volume));
+  try {
+    localStorage.setItem('senwitt_sound_volume', JSON.stringify(soundVolume));
+  } catch (e) {}
+};
+
+export const getSoundVolume = (): number => {
+  try {
+    const raw = localStorage.getItem('senwitt_sound_volume');
+    if (raw !== null) return JSON.parse(raw);
+  } catch (e) {}
+  return soundVolume;
+};
+
 export const playClickSound = () => {
   if (isSoundMuted()) return;
   const ctx = getAudioContext();
   if (!ctx) return;
+  const vol = getSoundVolume();
 
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -55,7 +72,7 @@ export const playClickSound = () => {
   osc.frequency.setValueAtTime(440, ctx.currentTime);
   osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.05);
 
-  gain.gain.setValueAtTime(0.1, ctx.currentTime);
+  gain.gain.setValueAtTime(0.1 * vol, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
 
   osc.connect(gain);

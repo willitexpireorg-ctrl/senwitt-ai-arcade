@@ -2,14 +2,17 @@ import React from 'react';
 import { X, Download, Calendar, Zap, CheckCircle2, Clock } from 'lucide-react';
 import type { SessionResult, UserProgress } from '../types';
 import { playClickSound } from '../services/sound';
+import { importUserDataJson } from '../services/storage';
 
 interface SessionHistoryModalProps {
   history: SessionResult[];
   progress: UserProgress;
   onClose: () => void;
+  onRefreshData?: () => void;
 }
 
-export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ history, progress, onClose }) => {
+export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ history, progress, onClose, onRefreshData }) => {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   
   const handleExportCSV = () => {
     playClickSound();
@@ -46,10 +49,39 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
     document.body.removeChild(link);
   };
 
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        const success = importUserDataJson(content);
+        if (success) {
+          alert('Progress backup restored successfully!');
+          if (onRefreshData) onRefreshData();
+          onClose();
+        } else {
+          alert('Invalid backup JSON format.');
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
       <div className="glass-panel max-w-2xl w-full p-6 border border-indigo-500/30 text-left relative animate-fadeIn flex flex-col max-h-[85vh]">
         
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".json"
+          onChange={handleImportFile}
+          className="hidden"
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
           <div className="flex items-center gap-3">
@@ -58,7 +90,7 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Workout History & Data Export</h2>
-              <p className="text-xs text-gray-400">Review past daily sessions and export progress data.</p>
+              <p className="text-xs text-gray-400">Review past daily sessions and export/restore progress data.</p>
             </div>
           </div>
 
@@ -70,14 +102,14 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
           </button>
         </div>
 
-        {/* Action Export Buttons */}
-        <div className="flex items-center gap-3 mb-6">
+        {/* Action Export / Import Buttons */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <button
             onClick={handleExportCSV}
             className="gradient-btn text-xs px-4 py-2 flex items-center gap-1.5"
           >
             <Download className="w-4 h-4" />
-            <span>Export CSV Report</span>
+            <span>Export CSV</span>
           </button>
 
           <button
@@ -85,7 +117,14 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
             className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white border border-white/10 transition-all flex items-center gap-1.5"
           >
             <Download className="w-4 h-4" />
-            <span>Export JSON Backup</span>
+            <span>Export JSON</span>
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-xs font-semibold text-indigo-300 border border-indigo-500/30 transition-all flex items-center gap-1.5"
+          >
+            <span>Restore JSON Backup</span>
           </button>
         </div>
 

@@ -30,14 +30,16 @@ export const NeuralBackground: React.FC = () => {
     window.addEventListener('resize', setupCanvasSize);
 
     // Neural nodes calculation based on viewport width
-    const nodeCount = Math.floor(Math.min(width, height) / 18);
-    const nodes = Array.from({ length: nodeCount }).map(() => ({
+    const nodeCount = Math.floor(Math.min(width, height) / 16);
+    let time = 0;
+    const nodes = Array.from({ length: nodeCount }).map((_, idx) => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      radius: Math.random() * 2 + 1,
-      alpha: Math.random() * 0.5 + 0.2,
+      vx: (Math.random() - 0.5) * 0.45,
+      vy: (Math.random() - 0.5) * 0.45,
+      radius: Math.random() * 2.2 + 1.2,
+      alpha: Math.random() * 0.4 + 0.3,
+      color: idx % 3 === 0 ? '#06b6d4' : idx % 3 === 1 ? '#8b5cf6' : '#6366f1',
     }));
 
     // Mouse interop
@@ -50,6 +52,7 @@ export const NeuralBackground: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove);
 
     const render = () => {
+      time += 0.02;
       ctx.clearRect(0, 0, width, height);
 
       // Render connecting synapses
@@ -59,8 +62,8 @@ export const NeuralBackground: React.FC = () => {
           const dy = nodes[i].y - nodes[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 130) {
-            const alpha = (1 - dist / 130) * 0.15;
+          if (dist < 140) {
+            const alpha = (1 - dist / 140) * 0.18;
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
@@ -84,15 +87,17 @@ export const NeuralBackground: React.FC = () => {
         const mdy = mouseY - node.y;
         const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
         if (mdist < 180) {
-          node.x += (mdx / mdist) * 0.2;
-          node.y += (mdy / mdist) * 0.2;
+          node.x += (mdx / mdist) * 0.25;
+          node.y += (mdy / mdist) * 0.25;
         }
 
+        const pulseRadius = node.radius + Math.sin(time + node.x) * 0.5;
+
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(139, 92, 246, ${node.alpha})`;
-        ctx.shadowColor = '#6366f1';
-        ctx.shadowBlur = 8;
+        ctx.arc(node.x, node.y, Math.max(0.5, pulseRadius), 0, Math.PI * 2);
+        ctx.fillStyle = node.color;
+        ctx.shadowColor = node.color;
+        ctx.shadowBlur = 10;
         ctx.fill();
       });
 

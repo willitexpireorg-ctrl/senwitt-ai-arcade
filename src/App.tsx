@@ -12,6 +12,10 @@ import { WittChatModal } from './components/WittChatModal';
 import { SessionHistoryModal } from './components/SessionHistoryModal';
 import { VoiceFluencyDrill } from './components/VoiceFluencyDrill';
 import { NeuralBackground } from './components/NeuralBackground';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { DualNBackGame } from './components/DualNBackGame';
+import { StroopDrill } from './components/StroopDrill';
+import { LogicInferenceDrill } from './components/LogicInferenceDrill';
 import type { UserProgress, SessionResult, SetMode, SkillCategory, ExerciseItem } from './types';
 import { getStoredProgress, recordSessionCompletion, getSessionHistory } from './services/storage';
 import { EXERCISE_BANK, getDailySetForMode } from './data/exerciseBank';
@@ -33,7 +37,7 @@ export const App: React.FC = () => {
   // Active workout session state
   const [activeSessionMode, setActiveSessionMode] = useState<SetMode | null>(null);
   const [activeSessionItems, setActiveSessionItems] = useState<ExerciseItem[]>([]);
-  const [isSpatialGameActive, setIsSpatialGameActive] = useState<boolean>(false);
+  const [activeGameMode, setActiveGameMode] = useState<'spatial' | 'dual_nback' | 'stroop' | 'logic_deduction' | null>(null);
   
   // Modals state
   const [completedSession, setCompletedSession] = useState<SessionResult | null>(null);
@@ -56,7 +60,7 @@ export const App: React.FC = () => {
 
     setActiveSessionItems(calibratedItems);
     setActiveSessionMode(mode);
-    setIsSpatialGameActive(false);
+    setActiveGameMode(null);
   };
 
   const handleStartSkillPractice = (skill: SkillCategory) => {
@@ -64,17 +68,27 @@ export const App: React.FC = () => {
     const items = matching.length > 0 ? matching.slice(0, 3) : customBank.slice(0, 3);
     setActiveSessionItems(items);
     setActiveSessionMode('coffee_break');
-    setIsSpatialGameActive(false);
+    setActiveGameMode(null);
   };
 
   const handleLaunchSpatialGame = () => {
-    setIsSpatialGameActive(true);
+    setActiveGameMode('spatial');
     setActiveSessionMode(null);
   };
 
   const handleLaunchArcadeGame = (game: GameSpec) => {
     if (game.mechanicType === 'visual_grid') {
-      handleLaunchSpatialGame();
+      setActiveGameMode('spatial');
+      setActiveSessionMode(null);
+    } else if (game.mechanicType === 'dual_nback') {
+      setActiveGameMode('dual_nback');
+      setActiveSessionMode(null);
+    } else if (game.mechanicType === 'stroop') {
+      setActiveGameMode('stroop');
+      setActiveSessionMode(null);
+    } else if (game.mechanicType === 'logic_deduction') {
+      setActiveGameMode('logic_deduction');
+      setActiveSessionMode(null);
     } else {
       const matching = customBank.filter((item) => item.category === game.category);
       const items = matching.length > 0 ? matching.slice(0, 3) : customBank.slice(0, 3);
@@ -83,14 +97,14 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSpatialGameComplete = (scoreEarned: number) => {
-    setIsSpatialGameActive(false);
+  const handleCustomGameComplete = (scoreEarned: number, modeName: string) => {
+    setActiveGameMode(null);
     const fakeSession: SessionResult = {
-      id: `spatial-${Date.now()}`,
+      id: `${modeName}-${Date.now()}`,
       mode: 'coffee_break',
       date: new Date().toISOString().split('T')[0],
       totalItems: 4,
-      correctCount: Math.min(4, Math.floor(scoreEarned / 30)),
+      correctCount: Math.min(4, Math.max(1, Math.floor(scoreEarned / 30))),
       totalTimeSpentMs: 30000,
       sharpnessDelta: Math.max(10, Math.floor(scoreEarned / 10)),
       finalSharpness: 0,
@@ -124,7 +138,7 @@ export const App: React.FC = () => {
   const handleCancelSession = () => {
     setActiveSessionMode(null);
     setActiveSessionItems([]);
-    setIsSpatialGameActive(false);
+    setActiveGameMode(null);
   };
 
   return (
@@ -146,61 +160,76 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16 relative z-10">
-        
-        {/* Spatial Memory Game Overlay */}
-        {isSpatialGameActive ? (
-          <SpatialMemoryGame
-            onComplete={handleSpatialGameComplete}
-            onCancel={handleCancelSession}
-          />
-        ) : activeSessionMode && activeSessionItems.length > 0 ? (
-          /* Active Workout Session Overlay */
-          <ExercisePlayer
-            items={activeSessionItems}
-            setMode={activeSessionMode}
-            onComplete={handleCompleteSession}
-            onCancel={handleCancelSession}
-          />
-        ) : (
-          <>
-            {activeTab === 'dashboard' && (
-              <Dashboard
-                progress={progress}
-                onStartSet={handleStartSet}
-                onSelectSkill={handleStartSkillPractice}
-                onTestCustomRep={handleTestSingleExercise}
-              />
-            )}
+        <ErrorBoundary>
+          {/* Active Mini-Game Overlays */}
+          {activeGameMode === 'spatial' ? (
+            <SpatialMemoryGame
+              onComplete={(s) => handleCustomGameComplete(s, 'spatial')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'dual_nback' ? (
+            <DualNBackGame
+              onComplete={(s) => handleCustomGameComplete(s, 'dual_nback')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'stroop' ? (
+            <StroopDrill
+              onComplete={(s) => handleCustomGameComplete(s, 'stroop')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'logic_deduction' ? (
+            <LogicInferenceDrill
+              onComplete={(s) => handleCustomGameComplete(s, 'logic_deduction')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeSessionMode && activeSessionItems.length > 0 ? (
+            /* Active Workout Session Overlay */
+            <ExercisePlayer
+              items={activeSessionItems}
+              setMode={activeSessionMode}
+              onComplete={handleCompleteSession}
+              onCancel={handleCancelSession}
+            />
+          ) : (
+            <>
+              {activeTab === 'dashboard' && (
+                <Dashboard
+                  progress={progress}
+                  onStartSet={handleStartSet}
+                  onSelectSkill={handleStartSkillPractice}
+                  onTestCustomRep={handleTestSingleExercise}
+                />
+              )}
 
-            {activeTab === 'arcade' && (
-              <GamesArcade
-                onLaunchGame={handleLaunchArcadeGame}
-              />
-            )}
+              {activeTab === 'arcade' && (
+                <GamesArcade
+                  onLaunchGame={handleLaunchArcadeGame}
+                />
+              )}
 
-            {activeTab === 'skills' && (
-              <SkillCatalog
-                progress={progress}
-                onStartSkillPractice={handleStartSkillPractice}
-              />
-            )}
+              {activeTab === 'skills' && (
+                <SkillCatalog
+                  progress={progress}
+                  onStartSkillPractice={handleStartSkillPractice}
+                />
+              )}
 
-            {activeTab === 'studio' && (
-              <AgentGeneratorStudio
-                onInjectExercises={handleInjectAgentExercises}
-                onTestExercise={handleTestSingleExercise}
-              />
-            )}
+              {activeTab === 'studio' && (
+                <AgentGeneratorStudio
+                  onInjectExercises={handleInjectAgentExercises}
+                  onTestExercise={handleTestSingleExercise}
+                />
+              )}
 
-            {activeTab === 'progress' && (
-              <AnalyticsPage
-                progress={progress}
-                sessionHistory={sessionHistory}
-              />
-            )}
-          </>
-        )}
-
+              {activeTab === 'progress' && (
+                <AnalyticsPage
+                  progress={progress}
+                  sessionHistory={sessionHistory}
+                />
+              )}
+            </>
+          )}
+        </ErrorBoundary>
       </main>
 
       {/* Session Completion Modal */}
@@ -226,6 +255,10 @@ export const App: React.FC = () => {
           history={sessionHistory}
           progress={progress}
           onClose={() => setIsHistoryModalOpen(false)}
+          onRefreshData={() => {
+            setProgress(getStoredProgress());
+            setSessionHistory(getSessionHistory());
+          }}
         />
       )}
 

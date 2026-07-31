@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Flame, Shield, Award, Zap, Brain, Volume2, VolumeX, Grid, Bot, Gamepad2, MessageSquare, Download, Mic } from 'lucide-react';
 import type { UserProgress } from '../types';
-import { isSoundMuted, setSoundMuted, playClickSound } from '../services/sound';
+import { isSoundMuted, setSoundMuted, getSoundVolume, setSoundVolume, playClickSound } from '../services/sound';
 
 interface NavbarProps {
   progress: UserProgress;
@@ -23,12 +23,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenVoiceDrill,
 }) => {
   const [muted, setMuted] = useState<boolean>(isSoundMuted());
+  const [volume, setVol] = useState<number>(getSoundVolume());
+  const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
 
   const handleToggleSound = () => {
     const nextMuted = !muted;
     setMuted(nextMuted);
     setSoundMuted(nextMuted);
     if (!nextMuted) playClickSound();
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setVol(val);
+    setSoundVolume(val);
+    if (val > 0 && muted) {
+      setMuted(false);
+      setSoundMuted(false);
+    }
   };
 
   const handleTabClick = (tab: string) => {
@@ -159,15 +171,39 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Download className="w-4 h-4 text-gray-300" />
           </button>
 
-          {/* Sound Toggle Button */}
-          <button
-            onClick={handleToggleSound}
-            aria-label={muted ? 'Unmute Audio Effects' : 'Mute Audio Effects'}
-            title={muted ? 'Unmute Sound FX' : 'Mute Sound FX'}
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-ring"
-          >
-            {muted ? <VolumeX className="w-4 h-4 text-gray-500" /> : <Volume2 className="w-4 h-4 text-indigo-400" />}
-          </button>
+          {/* Sound Toggle & Volume Slider Popover */}
+          <div className="relative flex items-center">
+            <button
+              onClick={handleToggleSound}
+              onMouseEnter={() => setShowVolumeSlider(true)}
+              aria-label={muted ? 'Unmute Audio Effects' : 'Mute Audio Effects'}
+              title={muted ? 'Unmute Sound FX' : 'Mute Sound FX'}
+              className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-ring"
+            >
+              {muted ? <VolumeX className="w-4 h-4 text-gray-500" /> : <Volume2 className="w-4 h-4 text-indigo-400" />}
+            </button>
+
+            {showVolumeSlider && (
+              <div 
+                onMouseLeave={() => setShowVolumeSlider(false)}
+                className="absolute top-12 right-0 glass-panel p-3 border border-indigo-500/30 rounded-xl flex items-center gap-2 z-50 shadow-2xl animate-fadeIn"
+              >
+                <Volume2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={muted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  className="w-24 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                />
+                <span className="text-[10px] font-mono text-indigo-300 w-8 font-bold">
+                  {muted ? '0%' : `${Math.round(volume * 100)}%`}
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Sharpness Pill */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">

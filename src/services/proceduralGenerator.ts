@@ -51,3 +51,67 @@ console.log(calc(${multiplier}));`,
     cognitiveTarget: 'Lexical Closure Tracing'
   };
 };
+
+export const generateProceduralReasoningItem = (): ExerciseItem => {
+  const subjects = ['Alpha', 'Beta', 'Gamma', 'Delta'];
+  const subj1 = subjects[Math.floor(Math.random() * subjects.length)];
+  const subj2 = subjects.filter((s) => s !== subj1)[Math.floor(Math.random() * 3)];
+  
+  return {
+    id: `proc-reason-${Date.now()}`,
+    category: 'reasoning',
+    type: 'syllogistic_deduction',
+    title: 'Procedural Syllogism Audit',
+    prompt: `Premise 1: All ${subj1} processes require deterministic synchronization.\nPremise 2: Task X is a ${subj1} process.\n\nWhich conclusion MUST logically follow?`,
+    options: [
+      `Task X requires deterministic synchronization.`,
+      `Task X runs faster than ${subj2} processes.`,
+      `All deterministic processes are ${subj1} processes.`,
+      `Task X will never fail runtime validation.`
+    ],
+    correctAnswer: `Task X requires deterministic synchronization.`,
+    explanation: `Universal instantiation: since all ${subj1} processes require deterministic synchronization and Task X is a ${subj1} process, Task X must require deterministic synchronization.`,
+    difficulty: 2,
+    cognitiveTarget: 'Deductive Syllogistic Inference'
+  };
+};
+
+export const generateProceduralMemoryItem = (): ExerciseItem => {
+  const words = ['KUBERNETES', 'DOCKER', 'POSTGRES', 'REDIS', 'GRAPHQL', 'TERRAFORM'];
+  const chosen = words.sort(() => 0.5 - Math.random()).slice(0, 3);
+  const target = chosen[1];
+
+  return {
+    id: `proc-mem-${Date.now()}`,
+    category: 'memory',
+    type: 'paired_associates',
+    title: 'Procedural Sequence Memory Rep',
+    prompt: `Recall the 2nd item in this technical stack sequence: [${chosen.join(' → ')}]`,
+    options: [chosen[1], chosen[0], chosen[2], 'NGINX'],
+    correctAnswer: target,
+    explanation: `The 2nd item in the sequence [${chosen.join(' → ')}] is ${target}.`,
+    difficulty: 2,
+    cognitiveTarget: 'Phonological Working Memory Order'
+  };
+};
+
+export const generateProceduralReadingItem = (): ExerciseItem => {
+  return {
+    id: `proc-read-${Date.now()}`,
+    category: 'reading',
+    type: 'unspoken_assumption',
+    title: 'Procedural Critical Assumption Detector',
+    prompt: 'Claim: "Implementing distributed caching reduced server database CPU load by 40%."\n\nWhat unstated assumption is necessary for this claim to hold?',
+    options: [
+      'Cache read hits bypassed repeated expensive database query execution.',
+      'The database engine was upgraded to PostgreSQL 16.',
+      'All database tables were fully indexed before deployment.',
+      'The server was migrated to a faster ARM processor.'
+    ],
+    correctAnswer: 'Cache read hits bypassed repeated expensive database query execution.',
+    explanation: 'For a cache to reduce DB CPU load, the cached queries must actually bypass DB processing via cache hit interception.',
+    difficulty: 3,
+    cognitiveTarget: 'Unstated Assumption Identification'
+  };
+};
+
