@@ -36,10 +36,22 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }
   const generateTrials = (count: number = 10): StroopTrial[] => {
     const list: StroopTrial[] = [];
     for (let i = 0; i < count; i++) {
-      const wordObj = COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
-      const inkObj = Math.random() < 0.3
+      let wordObj = COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+      let inkObj = Math.random() < 0.3
         ? wordObj // congruent
         : COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)]; // incongruent
+
+      // Prevent consecutive duplicate word+ink combinations
+      while (
+        i > 0 &&
+        wordObj.name === list[i - 1].word &&
+        inkObj.name === list[i - 1].inkName
+      ) {
+        wordObj = COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+        inkObj = Math.random() < 0.3
+          ? wordObj
+          : COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+      }
 
       list.push({
         word: wordObj.name,

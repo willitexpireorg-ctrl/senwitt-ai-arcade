@@ -84,6 +84,20 @@ export const LogicInferenceDrill: React.FC<LogicInferenceDrillProps> = ({ onComp
 
   const problem = LOGIC_PROBLEMS[currentIndex];
 
+  // Keyboard shortcut listeners (1-4 or A-D)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isAnswered) return;
+      const key = e.key.toUpperCase();
+      if (key === '1' || key === 'A') handleSelectOption(0);
+      if (key === '2' || key === 'B') handleSelectOption(1);
+      if (key === '3' || key === 'C') handleSelectOption(2);
+      if (key === '4' || key === 'D') handleSelectOption(3);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAnswered, currentIndex]);
+
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;
     playClickSound();
@@ -175,9 +189,14 @@ export const LogicInferenceDrill: React.FC<LogicInferenceDrillProps> = ({ onComp
                 onClick={() => handleSelectOption(idx)}
                 className={optClass}
               >
-                <span>{String.fromCharCode(65 + idx)}. {optionText}</span>
-                {isAnswered && isCorrectOption && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                {isAnswered && isSelected && !isCorrectOption && <XCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-mono font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/10 text-purple-300">
+                    [{String.fromCharCode(65 + idx)}]
+                  </span>
+                  <span>{optionText}</span>
+                </div>
+                {isAnswered && isCorrectOption && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />}
+                {isAnswered && isSelected && !isCorrectOption && <XCircle className="w-4 h-4 text-rose-400 shrink-0 ml-2" />}
               </button>
             );
           })}

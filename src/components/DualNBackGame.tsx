@@ -33,13 +33,22 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
       if (i >= n && Math.random() < 0.35) {
         posSeq.push(posSeq[i - n]);
       } else {
-        posSeq.push(Math.floor(Math.random() * 9));
+        let randPos = Math.floor(Math.random() * 9);
+        // Avoid unintended consecutive duplicate positions unless N=1 match
+        while (i > 0 && n > 1 && randPos === posSeq[i - 1]) {
+          randPos = Math.floor(Math.random() * 9);
+        }
+        posSeq.push(randPos);
       }
 
       if (i >= n && Math.random() < 0.35) {
         letSeq.push(letSeq[i - n]);
       } else {
-        letSeq.push(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
+        let randLet = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+        while (i > 0 && n > 1 && randLet === letSeq[i - 1]) {
+          randLet = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+        }
+        letSeq.push(randLet);
       }
     }
 
@@ -214,27 +223,37 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
           <button
             disabled={userMatchedPosition || currentStep < nLevel}
             onClick={handlePositionMatch}
-            className={`py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border transition-all ${
+            className={`py-3.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between border transition-all ${
               userMatchedPosition
                 ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200'
                 : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-cyan-400/40 shadow-lg shadow-cyan-500/20'
             }`}
           >
-            <Grid className="w-4 h-4" />
-            <span>Position Match ({nLevel}-Back)</span>
+            <div className="flex items-center gap-2">
+              <Grid className="w-4 h-4" />
+              <span>Position Match</span>
+            </div>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded border border-white/20 font-mono">
+              [P] / [1]
+            </span>
           </button>
 
           <button
             disabled={userMatchedLetter || currentStep < nLevel}
             onClick={handleLetterMatch}
-            className={`py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border transition-all ${
+            className={`py-3.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between border transition-all ${
               userMatchedLetter
                 ? 'bg-indigo-500/30 border-indigo-400 text-indigo-200'
                 : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white border-indigo-400/40 shadow-lg shadow-indigo-500/20'
             }`}
           >
-            <Volume2 className="w-4 h-4" />
-            <span>Letter Match ({nLevel}-Back)</span>
+            <div className="flex items-center gap-2">
+              <Volume2 className="w-4 h-4" />
+              <span>Letter Match</span>
+            </div>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded border border-white/20 font-mono">
+              [L] / [2]
+            </span>
           </button>
         </div>
 
