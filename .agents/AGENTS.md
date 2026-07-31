@@ -14,3 +14,8 @@ All AI coding subagents working in this codebase MUST strictly follow Vercel's O
 ## 3. Resilience & Security
 - Wrap all LocalStorage operations in safe fallback wrappers.
 - Never expose sensitive keys in client bundles.
+
+## 4. Mandatory Frontend Design & UI Excellence
+- For ALL frontend web applications, HTML/CSS, React, Vue, UI components, and layout tasks: ALWAYS activate and strictly enforce the `frontend-design` skill (`.agents/skills/frontend-design/SKILL.md`).
+- NEVER build generic, plain, or "AI slop" interfaces (isolated small floating boxes on empty backgrounds).
+- ALWAYS create full-bleed, responsive, tactile 3D, high-contrast, visually stunning web experiences with 3D WebGL/Canvas backgrounds, 3D press-depth buttons, and rich micro-interactions.
