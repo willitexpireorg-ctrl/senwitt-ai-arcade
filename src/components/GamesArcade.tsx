@@ -1,146 +1,368 @@
-import React, { useState } from 'react';
-import { Gamepad2, Play, Target, Clock } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import {
+  Gamepad2, Play, Target, Clock, LayoutGrid, Layers, Palette,
+  Scale, Mic, PenLine, Calculator, Code2, BookSearch, Brain,
+  FileText, MessageSquareText, Percent, Scissors, ShoppingCart, ListOrdered, Zap,
+  GitCompare, ScanSearch, Shuffle, Sparkles,
+  type LucideIcon,
+} from 'lucide-react';
 import { ResearchAgent } from '../services/researchAgent';
 import type { GameSpec } from '../services/researchAgent';
+import type { BaselinePriority, SkillCategory, UserProgress } from '../types';
 import { playClickSound } from '../services/sound';
 
 interface GamesArcadeProps {
   onLaunchGame: (game: GameSpec) => void;
+  progress?: UserProgress;
 }
 
-// Per-category visual identities
+const BASELINE_TO_CATEGORY: Record<BaselinePriority, SkillCategory> = {
+  focus: 'reasoning',
+  recall: 'memory',
+  communication: 'writing',
+  numbers: 'math',
+};
+
+/** Prefer games matching weakest baseline areas / lowest skill scores (Hick: curated shortlist). */
+function pickRecommendedGames(games: GameSpec[], progress?: UserProgress, limit = 3): GameSpec[] {
+  if (!progress) return games.slice(0, limit);
+
+  const preferredCategories: SkillCategory[] = [];
+  const priorities = progress.baselineProfile?.priorities;
+  if (priorities?.length) {
+    for (const p of priorities) {
+      preferredCategories.push(BASELINE_TO_CATEGORY[p]);
+    }
+  }
+  const skillSorted = (Object.entries(progress.skills) as [SkillCategory, { score: number }][])
+    .sort((a, b) => a[1].score - b[1].score)
+    .map(([cat]) => cat);
+  for (const cat of skillSorted) {
+    if (!preferredCategories.includes(cat)) preferredCategories.push(cat);
+  }
+
+  const picked: GameSpec[] = [];
+  const used = new Set<string>();
+  for (const cat of preferredCategories) {
+    const match = games.find((g) => g.category === cat && !used.has(g.id));
+    if (match) {
+      picked.push(match);
+      used.add(match.id);
+    }
+    if (picked.length >= limit) break;
+  }
+  for (const g of games) {
+    if (picked.length >= limit) break;
+    if (!used.has(g.id)) {
+      picked.push(g);
+      used.add(g.id);
+    }
+  }
+  return picked;
+}
+
 const CATEGORY_STYLES: Record<string, {
-  emoji: string;
-  color: string;
-  glow: string;
-  bg: string;
-  border: string;
+  soft: string;
+  ink: string;
   badgeClass: string;
   btnClass: string;
-  tagColor: string;
 }> = {
   writing: {
-    emoji: '✍️',
-    color: '#818cf8',
-    glow: 'rgba(99,102,241,0.25)',
-    bg: 'linear-gradient(135deg, #1e1b4b 0%, #13103a 60%, #0a0a14 100%)',
-    border: 'rgba(99,102,241,0.3)',
+    soft: '#e0f2fe',
+    ink: '#0369a1',
     badgeClass: 'badge-writing',
-    btnClass: 'btn-3d-indigo',
-    tagColor: '#a5b4fc',
+    btnClass: 'btn-3d-cyan',
   },
   math: {
-    emoji: '🧮',
-    color: '#22d3ee',
-    glow: 'rgba(6,182,212,0.25)',
-    bg: 'linear-gradient(135deg, #083344 0%, #052e3d 60%, #020d14 100%)',
-    border: 'rgba(6,182,212,0.3)',
+    soft: '#ccfbf1',
+    ink: '#0f766e',
     badgeClass: 'badge-math',
-    btnClass: 'btn-3d-cyan',
-    tagColor: '#67e8f9',
+    btnClass: 'btn-3d-teal',
   },
   code: {
-    emoji: '💻',
-    color: '#34d399',
-    glow: 'rgba(16,185,129,0.25)',
-    bg: 'linear-gradient(135deg, #064e3b 0%, #022c22 60%, #020d0a 100%)',
-    border: 'rgba(16,185,129,0.3)',
+    soft: '#d1fae5',
+    ink: '#047857',
     badgeClass: 'badge-code',
     btnClass: 'btn-3d-emerald',
-    tagColor: '#6ee7b7',
   },
   memory: {
-    emoji: '🧠',
-    color: '#a78bfa',
-    glow: 'rgba(139,92,246,0.25)',
-    bg: 'linear-gradient(135deg, #2e1065 0%, #1e0a4a 60%, #0a0520 100%)',
-    border: 'rgba(139,92,246,0.3)',
+    soft: '#cffafe',
+    ink: '#0e7490',
     badgeClass: 'badge-memory',
-    btnClass: 'btn-3d-violet',
-    tagColor: '#c4b5fd',
+    btnClass: 'btn-3d-cyan',
   },
   reading: {
-    emoji: '📖',
-    color: '#fbbf24',
-    glow: 'rgba(245,158,11,0.25)',
-    bg: 'linear-gradient(135deg, #292524 0%, #1c1408 60%, #0a0800 100%)',
-    border: 'rgba(245,158,11,0.3)',
+    soft: '#fef3c7',
+    ink: '#b45309',
     badgeClass: 'badge-reading',
     btnClass: 'btn-3d-amber',
-    tagColor: '#fcd34d',
   },
   reasoning: {
-    emoji: '⚖️',
-    color: '#fb7185',
-    glow: 'rgba(244,63,94,0.25)',
-    bg: 'linear-gradient(135deg, #4c0519 0%, #3a0212 60%, #140008 100%)',
-    border: 'rgba(244,63,94,0.3)',
+    soft: '#ffe4e6',
+    ink: '#be123c',
     badgeClass: 'badge-reasoning',
     btnClass: 'btn-3d-rose',
-    tagColor: '#fda4af',
   },
 };
 
-// Games with live interactive engines
-const LIVE_MECHANIC_TYPES = new Set(['visual_grid', 'dual_nback', 'stroop', 'logic_deduction', 'voice_drill']);
+/** Per-game visual identity — every title gets a unique icon + art well. */
+const GAME_VISUALS: Record<string, { icon: LucideIcon; artClass: string; label: string }> = {
+  'game-spatial': {
+    icon: LayoutGrid,
+    artClass: 'tile-art--cyan',
+    label: 'Spatial grid icon',
+  },
+  'game-nback': {
+    icon: Layers,
+    artClass: 'tile-art--teal',
+    label: 'Dual n-back layers icon',
+  },
+  'game-stroop': {
+    icon: Palette,
+    artClass: 'tile-art--rose',
+    label: 'Stroop color palette icon',
+  },
+  'game-logic': {
+    icon: Scale,
+    artClass: 'tile-art--amber',
+    label: 'Logic scales icon',
+  },
+  'game-voice': {
+    icon: Mic,
+    artClass: 'tile-art--sky',
+    label: 'Speech microphone icon',
+  },
+  'game-brief-recall': {
+    icon: FileText,
+    artClass: 'tile-art--cyan',
+    label: 'Project update recall icon',
+  },
+  'game-clearer-sentence': {
+    icon: MessageSquareText,
+    artClass: 'tile-art--sky',
+    label: 'Clearer sentence rewrite icon',
+  },
+  'game-number-sense': {
+    icon: Percent,
+    artClass: 'tile-art--amber',
+    label: 'Number sense percent icon',
+  },
+  'game-brevity-cut': {
+    icon: Scissors,
+    artClass: 'tile-art--rose',
+    label: 'Brevity cut scissors icon',
+  },
+  'game-quick-purchase': {
+    icon: ShoppingCart,
+    artClass: 'tile-art--amber',
+    label: 'Quick purchase shopping cart icon',
+  },
+  'game-sequence-order': {
+    icon: ListOrdered,
+    artClass: 'tile-art--mint',
+    label: 'Sequence order list icon',
+  },
+  'game-rsvp-reader': {
+    icon: Zap,
+    artClass: 'tile-art--sky',
+    label: 'RSVP reader lightning icon',
+  },
+  'game-speed-match': {
+    icon: GitCompare,
+    artClass: 'tile-art--rose',
+    label: 'Speed Match compare icon',
+  },
+  'game-signal-sweep': {
+    icon: ScanSearch,
+    artClass: 'tile-art--amber',
+    label: 'Signal Sweep scan icon',
+  },
+  'game-pattern-shift': {
+    icon: Shuffle,
+    artClass: 'tile-art--mint',
+    label: 'Pattern Shift shuffle icon',
+  },
+  'game-writing-quiz': {
+    icon: PenLine,
+    artClass: 'tile-art--sky',
+    label: 'Writing pen icon',
+  },
+  'game-math-quiz': {
+    icon: Calculator,
+    artClass: 'tile-art--teal',
+    label: 'Math calculator icon',
+  },
+  'game-code-quiz': {
+    icon: Code2,
+    artClass: 'tile-art--mint',
+    label: 'Code brackets icon',
+  },
+  'game-reading-quiz': {
+    icon: BookSearch,
+    artClass: 'tile-art--amber',
+    label: 'Critical reading icon',
+  },
+  'game-memory-quiz': {
+    icon: Brain,
+    artClass: 'tile-art--cyan',
+    label: 'Memory challenge brain icon',
+  },
+};
+
+const FALLBACK_VISUAL = {
+  icon: Gamepad2,
+  artClass: 'tile-art--teal',
+  label: 'Game icon',
+};
+
+const LIVE_MECHANIC_TYPES = new Set([
+  'visual_grid', 'dual_nback', 'stroop', 'logic_deduction', 'voice_drill',
+  'brief_recall', 'clearer_sentence', 'number_sense',
+  'brevity_cut', 'quick_purchase', 'sequence_order', 'rsvp_reader',
+  'speed_match', 'signal_sweep', 'pattern_shift',
+]);
 
 const CATEGORIES = [
-  { label: 'All Games', value: 'all' },
-  { label: '✍️ Writing', value: 'writing' },
-  { label: '🧮 Math', value: 'math' },
-  { label: '💻 Code', value: 'code' },
-  { label: '🧠 Memory', value: 'memory' },
-  { label: '📖 Reading', value: 'reading' },
-  { label: '⚖️ Reasoning', value: 'reasoning' },
+  { label: 'All', value: 'all' },
+  { label: 'Writing', value: 'writing' },
+  { label: 'Math', value: 'math' },
+  { label: 'Code', value: 'code' },
+  { label: 'Memory', value: 'memory' },
+  { label: 'Reading', value: 'reading' },
+  { label: 'Reasoning', value: 'reasoning' },
 ];
 
-export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame }) => {
+const renderGameTile = (
+  game: GameSpec,
+  onLaunchGame: (game: GameSpec) => void,
+  opts?: { recommended?: boolean },
+) => {
+  const style = CATEGORY_STYLES[game.category] ?? CATEGORY_STYLES.writing;
+  const visual = GAME_VISUALS[game.id] ?? FALLBACK_VISUAL;
+  const Icon = visual.icon;
+  const isLive = LIVE_MECHANIC_TYPES.has(game.mechanicType);
+  const recommended = Boolean(opts?.recommended);
+
+  return (
+    <article
+      key={game.id}
+      className="game-tile animate-fadeInUp"
+      style={
+        recommended
+          ? {
+              border: '2px solid #0f766e',
+              transform: 'scale(1.02)',
+              boxShadow: '0 8px 24px rgba(15, 118, 110, 0.12)',
+            }
+          : undefined
+      }
+    >
+      <div className={`tile-art ${visual.artClass}`} role="img" aria-label={visual.label}>
+        <Icon className="tile-art__icon" strokeWidth={1.75} aria-hidden />
+      </div>
+
+      <div className="tile-body">
+        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-full ${style.badgeClass}`}>
+              {game.category}
+            </span>
+            {recommended && (
+              <span
+                className="text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-full"
+                style={{ background: '#ccfbf1', color: 'var(--accent-teal)', border: '1px solid #99f6e4' }}
+              >
+                For you
+              </span>
+            )}
+            {isLive && (
+              <span className="live-badge">
+                <span className="live-badge__dot" />
+                Live
+              </span>
+            )}
+          </div>
+          <span className="tile-meta">
+            <Clock className="w-3.5 h-3.5" /> {game.estimatedDuration}
+          </span>
+        </div>
+
+        <h3 className="tile-title" style={recommended ? { fontSize: '1.15rem' } : undefined}>
+          {game.title}
+        </h3>
+        <p className="tile-desc mb-4 flex-1">{game.description}</p>
+
+        <div className="tile-target" style={{ background: style.soft, color: style.ink }}>
+          <Target className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>Target: {game.neuralTarget}</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => { playClickSound(); onLaunchGame(game); }}
+          className={`btn-3d ${recommended ? 'btn-3d-teal' : style.btnClass} w-full py-3.5 flex items-center justify-center gap-2 text-sm mt-4`}
+        >
+          <Play className="w-4 h-4" style={{ fill: 'white' }} />
+          <span>Play</span>
+        </button>
+      </div>
+    </article>
+  );
+};
+
+export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame, progress }) => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const games = ResearchAgent.getGameSuite();
 
+  const recommended = useMemo(
+    () => pickRecommendedGames(games, progress, 3),
+    [games, progress],
+  );
   const filteredGames = filterCategory === 'all'
     ? games
     : games.filter((g) => g.category === filterCategory);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-tabSlideIn">
-
-      {/* ── Header ───────────────────────────────────────── */}
-      <div className="mb-8">
-        <div
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3"
-          style={{ background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.25)', color: '#67e8f9', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}
-        >
+    <div className="page-shell py-10 animate-tabSlideIn">
+      <div className="section-header">
+        <div className="section-pill">
           <Gamepad2 className="w-3.5 h-3.5" />
-          {games.length} Focused Drills
+          {games.length} focused drills
         </div>
-        <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 900, color: '#f0f4ff', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
-          Games
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '500px', lineHeight: 1.6 }}>
-          A handful of live mini-games plus focused multiple-choice drills, one per skill.
-        </p>
+        <h1>Games</h1>
+        <p>Live mini-games and short drills — pick one clear target and play.</p>
       </div>
 
-      {/* ── Category Filter Pills ─────────────────────────── */}
-      <div
-        className="flex flex-wrap items-center gap-2 mb-8 p-1.5 rounded-2xl max-w-max"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+      {recommended.length > 0 && (
+        <section className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-4 h-4" style={{ color: 'var(--accent-teal)' }} />
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Recommended for you
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children w-full">
+            {recommended.map((game) => renderGameTile(game, onLaunchGame, { recommended: true }))}
+          </div>
+        </section>
+      )}
+
+      <h2
+        className="mb-3"
+        style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}
       >
+        Browse all drills
+      </h2>
+
+      <div className="filter-chip-row">
         {CATEGORIES.map((cat) => {
           const isSelected = filterCategory === cat.value;
           return (
             <button
               key={cat.value}
+              type="button"
               onClick={() => { playClickSound(); setFilterCategory(cat.value); }}
-              className="px-4 py-1.5 rounded-xl text-xs font-semibold transition-all"
-              style={{
-                background: isSelected ? 'linear-gradient(135deg, rgba(99,102,241,0.9), rgba(79,70,229,0.9))' : 'transparent',
-                color: isSelected ? 'white' : 'rgba(255,255,255,0.45)',
-                boxShadow: isSelected ? '0 4px 14px rgba(99,102,241,0.4)' : 'none',
-                fontFamily: 'Outfit, sans-serif',
-                fontWeight: isSelected ? 700 : 500,
-              }}
+              className={`filter-chip ${isSelected ? 'is-active' : ''}`}
             >
               {cat.label}
             </button>
@@ -148,95 +370,9 @@ export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame }) => {
         })}
       </div>
 
-      {/* ── Games Grid ───────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
-        {filteredGames.map((game) => {
-          const style = CATEGORY_STYLES[game.category] ?? CATEGORY_STYLES.writing;
-          const isLive = LIVE_MECHANIC_TYPES.has(game.mechanicType);
-
-          return (
-            <div
-              key={game.id}
-              className="relative overflow-hidden rounded-2xl flex flex-col justify-between group animate-fadeInUp"
-              style={{
-                background: style.bg,
-                border: `1px solid ${style.border}`,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-                padding: '1.25rem',
-                transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = `0 8px 28px rgba(0,0,0,0.4), 0 0 20px ${style.glow}`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.35)';
-              }}
-            >
-              {/* Watermark emoji */}
-              <div style={{ position: 'absolute', top: '-8px', right: '-4px', fontSize: '5rem', opacity: 0.05, userSelect: 'none', pointerEvents: 'none', lineHeight: 1 }}>
-                {style.emoji}
-              </div>
-
-              {/* Top row: category badge + time + LIVE */}
-              <div className="flex items-center justify-between mb-3 relative z-10">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full ${style.badgeClass}`}>
-                    {game.category}
-                  </span>
-                  {isLive && (
-                    <span
-                      className="text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"
-                      style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-                      LIVE
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: style.tagColor }}>
-                  <Clock className="w-3 h-3" /> {game.estimatedDuration}
-                </span>
-              </div>
-
-              {/* Title & Description */}
-              <div className="relative z-10 mb-3">
-                <h3
-                  style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.05rem', fontWeight: 800, color: 'white', marginBottom: '0.375rem', letterSpacing: '-0.01em', transition: 'color 0.2s' }}
-                  className="group-hover:text-opacity-90"
-                >
-                  {game.title}
-                </h3>
-                <p style={{ color: 'rgba(200,210,230,0.6)', fontSize: '0.8rem', lineHeight: 1.55 }}>
-                  {game.description}
-                </p>
-              </div>
-
-              {/* Info strip */}
-              <div
-                className="relative z-10 rounded-xl p-2.5 mb-4"
-                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  <Target className="w-3.5 h-3.5 shrink-0" style={{ color: style.color }} />
-                  <span style={{ color: style.tagColor, fontWeight: 600 }}>Target: {game.neuralTarget}</span>
-                </div>
-              </div>
-
-              {/* Launch button */}
-              <button
-                onClick={() => { playClickSound(); onLaunchGame(game); }}
-                className={`btn-3d ${style.btnClass} relative z-10 w-full py-2.5 flex items-center justify-center gap-2 text-[11px] rounded-xl`}
-                style={{ letterSpacing: '0.06em' }}
-              >
-                <Play className="w-3.5 h-3.5" style={{ fill: 'white' }} />
-                <span>Play {game.title}</span>
-              </button>
-
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children w-full">
+        {filteredGames.map((game) => renderGameTile(game, onLaunchGame))}
       </div>
-
     </div>
   );
 };

@@ -60,26 +60,30 @@ export const getSoundVolume = (): number => {
 };
 
 export const playClickSound = () => {
-  if (isSoundMuted()) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-  const vol = getSoundVolume();
+  try {
+    if (isSoundMuted()) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const vol = getSoundVolume();
 
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(440, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.05);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.05);
 
-  gain.gain.setValueAtTime(0.1 * vol, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.1 * vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
 
-  osc.connect(gain);
-  gain.connect(ctx.destination);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
 
-  osc.start();
-  osc.stop(ctx.currentTime + 0.05);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  } catch {
+    // Never let audio failures block UI clicks
+  }
 };
 
 export const playCorrectSound = () => {

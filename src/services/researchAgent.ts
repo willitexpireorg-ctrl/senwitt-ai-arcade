@@ -9,7 +9,23 @@ export interface GameSpec {
   neuralTarget: string;
   difficultyRange: 'Tier 1-5';
   estimatedDuration: string;
-  mechanicType: 'visual_grid' | 'choice_quiz' | 'dual_nback' | 'stroop' | 'logic_deduction' | 'voice_drill';
+  mechanicType:
+    | 'visual_grid'
+    | 'choice_quiz'
+    | 'dual_nback'
+    | 'stroop'
+    | 'logic_deduction'
+    | 'voice_drill'
+    | 'brief_recall'
+    | 'clearer_sentence'
+    | 'number_sense'
+    | 'brevity_cut'
+    | 'quick_purchase'
+    | 'sequence_order'
+    | 'rsvp_reader'
+    | 'speed_match'
+    | 'signal_sweep'
+    | 'pattern_shift';
 }
 
 // A small, curated set of mini-games that actually work: four live interactive
@@ -73,6 +89,116 @@ export class ResearchAgent {
         mechanicType: 'voice_drill',
       },
       {
+        id: 'game-brief-recall',
+        title: 'Brief Recall Drill',
+        category: 'memory',
+        description: 'Read a short project update, then answer what was decided, by whom, and by when.',
+        scientificRationale: 'Practices retaining real-world updates the way you would after a meeting.',
+        neuralTarget: 'Everyday Working Memory',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'brief_recall',
+      },
+      {
+        id: 'game-clearer-sentence',
+        title: 'Clearer Sentence Drill',
+        category: 'writing',
+        description: 'Turn a verbose workplace message into the clearest one-line version.',
+        scientificRationale: 'Builds the instinct for concise, actionable writing under real constraints.',
+        neuralTarget: 'Communication Clarity',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'clearer_sentence',
+      },
+      {
+        id: 'game-number-sense',
+        title: 'Number Sense Drill',
+        category: 'math',
+        description: 'Spot-check percentages, ratios, discounts, and implausible figures.',
+        scientificRationale: 'Trains the "does this number make sense" instinct before you act on it.',
+        neuralTarget: 'Applied Number Sense',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'number_sense',
+      },
+      {
+        id: 'game-brevity-cut',
+        title: 'Brevity Cut',
+        category: 'writing',
+        description: 'Tap the redundant words out of a sentence before the round clock runs out.',
+        scientificRationale: 'Practices spotting and cutting words that add no meaning under light time pressure.',
+        neuralTarget: 'Concise Editing',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'brevity_cut',
+      },
+      {
+        id: 'game-quick-purchase',
+        title: 'Quick Purchase',
+        category: 'math',
+        description: 'Tips, discounts, subscription costs, and comparing deals — fast everyday money math.',
+        scientificRationale: 'Builds quick, accurate mental math for the numbers you meet while shopping or budgeting.',
+        neuralTarget: 'Applied Mental Math',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'quick_purchase',
+      },
+      {
+        id: 'game-sequence-order',
+        title: 'Sequence Order',
+        category: 'memory',
+        description: 'Memorize a short list of steps, then tap them back into the correct order.',
+        scientificRationale: 'Practices holding an ordered sequence in mind and reproducing it accurately.',
+        neuralTarget: 'Sequential Working Memory',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'sequence_order',
+      },
+      {
+        id: 'game-rsvp-reader',
+        title: 'RSVP Reader',
+        category: 'reading',
+        description: 'Words flash one at a time at a rising pace, then answer one question on what you read.',
+        scientificRationale: 'Trains reading comprehension at an increasing presentation rate.',
+        neuralTarget: 'Rapid Reading Comprehension',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'rsvp_reader',
+      },
+      {
+        id: 'game-speed-match',
+        title: 'Speed Match',
+        category: 'reasoning',
+        description: 'Decide whether each new symbol matches the previous one as the pace speeds up.',
+        scientificRationale: 'Practices rapid same/different judgments — a classic processing-speed paradigm under adaptive time pressure.',
+        neuralTarget: 'Processing Speed & Match Comparison',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'speed_match',
+      },
+      {
+        id: 'game-signal-sweep',
+        title: 'Signal Sweep',
+        category: 'reasoning',
+        description: 'Find every item that matches a priority rule among a crowded field of distractors.',
+        scientificRationale: 'Exercises selective attention: holding a target rule while filtering visual distractors under a short timer.',
+        neuralTarget: 'Selective Attention',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'signal_sweep',
+      },
+      {
+        id: 'game-pattern-shift',
+        title: 'Pattern Shift',
+        category: 'reasoning',
+        description: 'Sort cards by color or shape — then switch rules mid-round without warning.',
+        scientificRationale: 'Practices cognitive flexibility: updating the active classification rule when the cue changes.',
+        neuralTarget: 'Cognitive Flexibility / Task Switching',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'pattern_shift',
+      },
+      {
         id: 'game-writing-quiz',
         title: 'Writing Precision Drill',
         category: 'writing',
@@ -114,6 +240,17 @@ export class ResearchAgent {
         neuralTarget: 'Critical Reading',
         difficultyRange: 'Tier 1-5',
         estimatedDuration: '3 Mins',
+        mechanicType: 'choice_quiz',
+      },
+      {
+        id: 'game-memory-quiz',
+        title: 'Memory Challenge Drill',
+        category: 'memory',
+        description: 'Multiple-choice reps on sequences, working memory, and recall.',
+        scientificRationale: 'Builds short-term retention and recall precision.',
+        neuralTarget: 'Working Memory Recall',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
         mechanicType: 'choice_quiz',
       },
     ];

@@ -13,7 +13,7 @@ interface SessionHistoryModalProps {
 
 export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ history, progress, onClose, onRefreshData }) => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  
+
   const handleExportCSV = () => {
     playClickSound();
     const headers = ['SessionID', 'Date', 'Mode', 'TotalItems', 'CorrectCount', 'AccuracyPct', 'DurationSeconds', 'SharpnessDelta'];
@@ -25,7 +25,7 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
       s.correctCount,
       Math.round((s.correctCount / s.totalItems) * 100),
       Math.round(s.totalTimeSpentMs / 1000),
-      s.sharpnessDelta
+      s.sharpnessDelta,
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -70,10 +70,8 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="glass-panel max-w-2xl w-full p-6 border border-indigo-500/30 text-left relative animate-fadeIn flex flex-col max-h-[85vh]">
-        
-        {/* Hidden File Input */}
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="surface max-w-2xl w-full p-6 text-left relative animate-fadeIn flex flex-col max-h-[85vh]">
         <input
           type="file"
           ref={fileInputRef}
@@ -82,39 +80,41 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
           className="hidden"
         />
 
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+        <div className="flex items-center justify-between pb-4 mb-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: '#ccfbf1', border: '1px solid #99f6e4', color: 'var(--accent-teal)' }}
+            >
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Workout History & Data Export</h2>
-              <p className="text-xs text-gray-400">Review past daily sessions and export/restore progress data.</p>
+              <h2 className="text-xl font-extrabold">Workout history</h2>
+              <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                Review sessions and export or restore progress.
+              </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-white bg-white/5 border border-white/10"
+            className="p-2 rounded-xl"
+            style={{ color: 'var(--text-secondary)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Action Export / Import Buttons */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
-          <button
-            onClick={handleExportCSV}
-            className="gradient-btn text-xs px-4 py-2 flex items-center gap-1.5"
-          >
+          <button onClick={handleExportCSV} className="btn-3d btn-3d-teal text-xs px-4 py-2.5 flex items-center gap-1.5">
             <Download className="w-4 h-4" />
             <span>Export CSV</span>
           </button>
 
           <button
             onClick={handleExportJSON}
-            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white border border-white/10 transition-all flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5"
+            style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
           >
             <Download className="w-4 h-4" />
             <span>Export JSON</span>
@@ -122,48 +122,49 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-xs font-semibold text-indigo-300 border border-indigo-500/30 transition-all flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5"
+            style={{ background: '#ccfbf1', color: 'var(--accent-teal)', border: '1px solid #99f6e4' }}
           >
-            <span>Restore JSON Backup</span>
+            <span>Restore backup</span>
           </button>
         </div>
 
-        {/* History Log List */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
           {history.length === 0 ? (
-            <p className="text-xs text-gray-500 italic text-center py-8">No completed sessions logged yet.</p>
+            <p className="text-xs italic text-center py-8 font-semibold" style={{ color: 'var(--text-muted)' }}>
+              No completed sessions yet.
+            </p>
           ) : (
             history.map((session) => {
               const accuracyPct = Math.round((session.correctCount / session.totalItems) * 100);
               return (
-                <div key={session.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between text-xs">
+                <div key={session.id} className="surface-soft p-4 flex items-center justify-between text-xs gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-white uppercase">{session.mode.replace('_', ' ')}</span>
-                      <span className="text-gray-400">• {session.date}</span>
+                      <span className="font-extrabold uppercase">{session.mode.replace('_', ' ')}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>• {session.date}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-gray-300 text-[11px]">
+                    <div className="flex items-center gap-3 text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
                       <span className="flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> {accuracyPct}% Accuracy ({session.correctCount}/{session.totalItems})
+                        <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#059669' }} /> {accuracyPct}% ({session.correctCount}/{session.totalItems})
                       </span>
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-cyan-400" /> {Math.round(session.totalTimeSpentMs / 1000)}s
+                        <Clock className="w-3.5 h-3.5" style={{ color: '#0284c7' }} /> {Math.round(session.totalTimeSpentMs / 1000)}s
                       </span>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-sm font-black text-indigo-300 flex items-center gap-1 justify-end">
-                      <Zap className="w-3.5 h-3.5 text-indigo-400" /> +{session.sharpnessDelta}
+                  <div className="text-right shrink-0">
+                    <span className="text-sm font-black flex items-center gap-1 justify-end" style={{ color: 'var(--accent-teal)' }}>
+                      <Zap className="w-3.5 h-3.5" /> +{session.sharpnessDelta}
                     </span>
-                    <span className="text-[10px] text-gray-400 uppercase">Delta</span>
+                    <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Delta</span>
                   </div>
                 </div>
               );
             })
           )}
         </div>
-
       </div>
     </div>
   );

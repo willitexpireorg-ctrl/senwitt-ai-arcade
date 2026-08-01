@@ -79,6 +79,24 @@ export interface UserProgress {
   beltRank: BeltRank;
   skills: Record<SkillCategory, SkillMastery>;
   completedSetIds: string[];
+  baselineCompleted: boolean;
+  baselineProfile?: BaselineProfile;
+  /** Monthly "comeback" recovery tokens — softer safety net than shields, meant
+   * for the occasional 2-day gap without any streak-loss anxiety. */
+  graceTokens: number;
+  /** YYYY-MM the current graceTokens balance was issued for; resets on month change. */
+  graceTokensMonth: string;
+  /** Tiny Habits: after I [anchor], I train */
+  habitAnchor?: string | null;
+  /** Minutes user committed to (foot-in-the-door) */
+  dailyMinutesGoal?: 2 | 5 | 10;
+  /** HH:mm local for opt-in reminder, null = off */
+  reminderTime?: string | null;
+  reminderEnabled?: boolean;
+  /** YYYY-MM-DD last time we showed in-app reminder banner */
+  reminderLastShownDate?: string | null;
+  /** true after user finished at least one full session — gates install prompt */
+  earnedInstallPrompt?: boolean;
 }
 
 export interface WittNudge {
@@ -86,4 +104,18 @@ export interface WittNudge {
   quote: string;
   categoryRecommendation: SkillCategory;
   mood: 'encouraging' | 'sharp' | 'challenging' | 'celebratory';
+}
+
+/** Practical priority buckets surfaced by the baseline assessment (deliberately
+ * distinct from SkillCategory — these map to plain-language, real-world areas). */
+export type BaselinePriority = 'focus' | 'recall' | 'communication' | 'numbers';
+
+export interface BaselineProfile {
+  /** Weakest-first ordering of the four practical areas. */
+  priorities: BaselinePriority[];
+  /** Normalized 0-100 score per area from the short sample. */
+  scoresByArea: Record<BaselinePriority, number>;
+  completedAt: string;
+  /** Optional foot-in-the-door minutes commitment from baseline intro. */
+  committedMinutes?: 2 | 5 | 10;
 }

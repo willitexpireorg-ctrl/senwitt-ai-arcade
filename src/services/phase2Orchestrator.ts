@@ -4,16 +4,22 @@ import { VoiceFluencyEngine } from './voiceFluencyEngine';
 import type { VoiceDrillResult } from './voiceFluencyEngine';
 import type { ExerciseItem } from '../types';
 
+const defaultProfile = (initialTheta: number = 0.2): IRTAbilityProfile => ({
+  theta: initialTheta,
+  glickoRating: 1500 + Math.round(300 * initialTheta),
+  ratingDeviation: 120,
+  flowStateTarget: 0.82,
+});
+
 export class Phase2MultiAgentOrchestrator {
   private abilityProfile: IRTAbilityProfile;
 
-  constructor(initialTheta: number = 0.2) {
-    this.abilityProfile = {
-      theta: initialTheta,
-      glickoRating: 1500 + Math.round(300 * initialTheta),
-      ratingDeviation: 120,
-      flowStateTarget: 0.82
-    };
+  constructor(initial?: number | IRTAbilityProfile) {
+    if (typeof initial === 'object' && initial !== null) {
+      this.abilityProfile = { ...defaultProfile(), ...initial };
+    } else {
+      this.abilityProfile = defaultProfile(typeof initial === 'number' ? initial : 0.2);
+    }
   }
 
   /**
@@ -21,6 +27,10 @@ export class Phase2MultiAgentOrchestrator {
    */
   getAbilityProfile(): IRTAbilityProfile {
     return this.abilityProfile;
+  }
+
+  setAbilityProfile(profile: IRTAbilityProfile): void {
+    this.abilityProfile = { ...profile };
   }
 
   /**

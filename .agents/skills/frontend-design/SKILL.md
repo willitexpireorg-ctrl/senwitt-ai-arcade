@@ -1,35 +1,45 @@
 ---
 name: frontend-design
-description: Design leadership system skill for building world-class, distinctive, highly aesthetic frontend interfaces. Combats generic AI slop, enforces full-bleed responsive layouts, tactile 3D controls, and bespoke visual identity.
+description: Design leadership skill for SENWITT — Elevate × Lumosity bright cognitive-training UI. Combats generic AI slop, enforces brand-first heroes, tactile controls, and a light optimistic visual system.
 ---
 
 # Frontend Design & UI Excellence Skill
 
-Use this skill whenever creating, updating, or reviewing any frontend component, page layout, or CSS style system.
+Use this skill whenever creating, updating, or reviewing any frontend component, page layout, or CSS style system for SENWITT.
 
-## 1. Core Principles & Anti-"AI Slop" Guidelines
+## 1. Aesthetic Direction — Bright Focus (Elevate × Lumosity)
 
-1. **Never Create Floating Empty Voids**: Avoid small `max-w-md` cards isolated in giant empty screens. Always build full-viewport, full-width, edge-to-edge responsive layouts.
-2. **Commit to a Distinctive Aesthetic**: Choose an intentional, high-impact design language (e.g., Tactile Arcade Gym, Cyberpunk Glassmorphism, Neo-Brutalist Precision).
-3. **Tactile 3D Micro-Interactions**: Use 3D press-depth buttons (`border-b-4`, `active:border-b-0`, `active:translate-y-1`), glowing focus states, and springy hover feedback.
-4. **Curated Color & Light Architecture**: Use rich dark backgrounds (`#090d16`, `#0f172a`), neon glowing accents (Cyan `#06b6d4`, Indigo `#6366f1`, Violet `#8b5cf6`, Emerald `#10b981`, Amber `#f59e0b`), and subtle WebGL/canvas 3D particle backgrounds.
+**Chosen language:** Light, optimistic cognitive gym — not cyberpunk glass, not purple neon dark mode.
 
-## 2. Layout & Spacing Rules
+- **Canvas:** Cool mist backgrounds (`#eef3f8`), white surfaces, soft blue-gray atmosphere
+- **Brand / primary:** Teal (`#0f766e` → `#14b8a6`) — Lumosity energy without clinical coldness
+- **Energy / CTA:** Coral (`#ff5c3a`) — Elevate-style motivation for primary actions and streaks
+- **Typography:** `Sora` (display/brand) + `Nunito` (UI body) + `IBM Plex Mono` (scores/timers). Never Inter/Roboto/Arial as the identity stack.
+- **Motion:** Hero drift, CTA pulse (box-shadow only), staggered tile entrance — 2–3 intentional motions, no glow spam
 
-- **Container Structure**: Use responsive multi-column layouts (`max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8`).
-- **Hero & Card Sections**: Make hero elements prominent (`text-3xl sm:text-5xl lg:text-6xl font-black`).
-- **Visual Hierarchy**: Clear separation between primary CTA actions, secondary information, and live stats.
-- **Responsive Breakpoints**: Test across mobile (360px), tablet (768px), and desktop (1280px+).
+## 2. Core Principles
 
-## 3. Typography & Badging
+1. **Brand first on home:** First viewport must read as SENWITT. Brand name is hero-level, not a nav-only mark.
+2. **Center the composition:** Hero copy, training card, section headers, chips, and grids are centered in `.page-shell` — never left-pinned into a dead corner.
+3. **Elevate overlap pattern:** Compact full-bleed `.hero-plane` + overlapping white `.training-card` (ring + primary CTA). Stats and secondary workouts sit below, centered.
+4. **Lumosity tiles:** `.game-tile` + `.tile-art` color wells; titles/descriptions/targets wrap fully — no `truncate` / mid-word clipping.
+5. **Tactile 3D buttons:** `btn-3d` coral/teal. Never animate `transform` on clickable controls (breaks hit-testing). Pulse via box-shadow only.
+6. **No AI slop defaults:** Avoid purple-on-white, cream+terracotta broadsheet, dark neon glassmorphism, glow stacks.
 
-- **Display Headings**: Use `Outfit` or modern bold sans-serif with tight tracking (`tracking-tight`).
-- **Body Text**: Use `Inter` with high readability and proper contrast ratios (minimum 4.5:1).
-- **Code & Stats**: Use `JetBrains Mono` for numerical counters, scores, timer displays, and hotkey badges.
+## 3. Layout & Components
+
+- Container: `.page-shell` (`max-w-6xl` centered)
+- Home: `.training-card` overlap; stats via `.stat-pill`
+- Games/Skills: `.tile-art` wells + wrapping `.tile-title` / `.tile-desc` / `.tile-target`
+- Mobile: fixed bottom tabs with full labels; hide during workouts
+- Desktop: compact top segmented nav
 
 ## 4. Implementation Checklist
 
-- [ ] Is the layout centered, full-width, and responsive across all viewports?
-- [ ] Are buttons tactile with clear hover, active, and focus states?
-- [ ] Are badges, status indicators, and feedback banners clear and visually rewarding?
-- [ ] Does the page feature dynamic ambient lighting (3D WebGL / Canvas particles)?
+- [ ] Light theme tokens from `index.css` (`--bg-primary`, `--accent-teal`, `--accent-coral`)
+- [ ] Brand readable without the nav; hero content centered
+- [ ] Primary CTA is coral or teal tactile button; pulse without transform
+- [ ] No truncated tile/nav copy; descriptions wrap 2–3 lines
+- [ ] Responsive: 390 / 768 / 1440
+- [ ] Focus rings visible (`focus-ring`)
+- [ ] No purple neon / dark glass regression; light surfaces use `--text-primary` / `--text-secondary` (not leftover dark-theme gray/white)

@@ -2,9 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Zap, Clock, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import { playClickSound, playCorrectSound, playIncorrectSound, playFanfareSound } from '../services/sound';
 
+export interface StroopDrillResult {
+  scoreEarned: number;
+  correctCount: number;
+  totalItems: number;
+  totalTimeMs: number;
+}
+
 interface StroopDrillProps {
-  onComplete: (scoreEarned: number) => void;
+  onComplete: (result: StroopDrillResult) => void;
   onCancel: () => void;
+  trialCount?: number; // default 10
+  feedbackMs?: number; // default 400, lower = faster pace
 }
 
 interface StroopTrial {
@@ -18,11 +27,11 @@ const COLOR_OPTIONS = [
   { name: 'Red', colorClass: 'text-red-500', hex: '#ef4444' },
   { name: 'Blue', colorClass: 'text-blue-500', hex: '#3b82f6' },
   { name: 'Green', colorClass: 'text-emerald-500', hex: '#10b981' },
-  { name: 'Yellow', colorClass: 'text-yellow-400', hex: '#facc15' },
-  { name: 'Purple', colorClass: 'text-purple-400', hex: '#c084fc' },
+  { name: 'Yellow', colorClass: 'text-yellow-500', hex: '#ca8a04' },
+  { name: 'Purple', colorClass: 'text-purple-500', hex: '#a855f7' },
 ];
 
-export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }) => {
+export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel, trialCount = 10, feedbackMs = 400 }) => {
   const [trials, setTrials] = useState<StroopTrial[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
@@ -32,8 +41,9 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }
   const [isFinished, setIsFinished] = useState<boolean>(false);
 
   const startTimeRef = useRef<number>(Date.now());
+  const drillStartRef = useRef<number>(Date.now());
 
-  const generateTrials = (count: number = 10): StroopTrial[] => {
+  const generateTrials = (count: number): StroopTrial[] => {
     const list: StroopTrial[] = [];
     for (let i = 0; i < count; i++) {
       let wordObj = COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
@@ -64,9 +74,11 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }
   };
 
   useEffect(() => {
-    setTrials(generateTrials(10));
+    setTrials(generateTrials(trialCount));
     startTimeRef.current = Date.now();
-  }, []);
+    drillStartRef.current = Date.now();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trialCount]);
 
   // Keyboard shortcut handlers for 1-5 number keys
   useEffect(() => {
@@ -79,6 +91,7 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFinished, feedback, currentIndex, trials]);
 
   const handleAnswer = (selectedColorName: string) => {
@@ -91,13 +104,18 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }
     const currentTrial = trials[currentIndex];
     const isCorrect = selectedColorName === currentTrial.inkName;
 
+    let nextCorrectCount = correctCount;
+    let nextScore = score;
+
     if (isCorrect) {
       playCorrectSound();
       setFeedback('correct');
       // Speed bonus: faster reaction time gets higher points
       const speedBonus = Math.max(10, Math.floor(1000 - reactionTime) / 10);
-      setScore((s) => s + 30 + Math.floor(speedBonus));
-      setCorrectCount((c) => c + 1);
+      nextScore = score + 30 + Math.floor(speedBonus);
+      nextCorrectCount = correctCount + 1;
+      setScore(nextScore);
+      setCorrectCount(nextCorrectCount);
     } else {
       playIncorrectSound();
       setFeedback('wrong');
@@ -108,98 +126,116 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel }
       if (currentIndex + 1 >= trials.length) {
         setIsFinished(true);
         playFanfareSound();
-        const finalScore = score + (isCorrect ? 30 : 0);
         setTimeout(() => {
-          onComplete(finalScore);
+          onComplete({
+            scoreEarned: nextScore,
+            correctCount: nextCorrectCount,
+            totalItems: trials.length,
+            totalTimeMs: Date.now() - drillStartRef.current,
+          });
         }, 1200);
       } else {
         setCurrentIndex((i) => i + 1);
         startTimeRef.current = Date.now();
       }
-    }, 400);
+    }, feedbackMs);
   };
 
   const currentTrial = trials[currentIndex];
   const avgReactionTime = correctCount > 0 ? Math.round(totalReactionTimeMs / (currentIndex + 1)) : 0;
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-center items-center relative z-10">
+    <div className="w-full max-w-3xl mx-auto px-4 py-8 sm:py-10 min-h-[calc(100vh-var(--navbar-height))] flex flex-col justify-start sm:justify-center items-stretch relative z-10">
       {/* Top Header */}
-      <div className="w-full flex items-center justify-between mb-6">
+      <div className="w-full flex items-center justify-between mb-6 gap-3 flex-wrap">
         <button
           onClick={onCancel}
-          className="btn-3d px-4 py-2 text-xs bg-slate-800 text-gray-300 border-b-4 border-slate-950 hover:bg-slate-700"
+          className="btn-3d px-4 py-2 text-xs"
+          style={{ background: '#fff', color: 'var(--text-secondary)', borderBottom: '4px solid #d7e0ea' }}
         >
-          ✕ Exit Arena
+          ✕ Exit
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-sm shadow-md">
-            <Zap className="w-4 h-4 text-amber-400" />
-            <span>Stroop Speed • {currentIndex + 1}/{trials.length || 10}</span>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div
+            className="flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-2 rounded-2xl"
+            style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c' }}
+          >
+            <Zap className="w-4 h-4" style={{ fill: '#f59e0b', color: '#f59e0b' }} />
+            <span>Stroop speed • {currentIndex + 1}/{trials.length || trialCount}</span>
           </div>
-          <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold text-sm shadow-md">
-            <Sparkles className="w-4 h-4 text-emerald-400 fill-emerald-400" />
-            <span>{score} XP</span>
+          <div
+            className="flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-2 rounded-2xl"
+            style={{ background: '#ccfbf1', border: '1px solid #99f6e4', color: 'var(--accent-teal)' }}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{score} pts</span>
           </div>
         </div>
       </div>
 
-      {/* Main Glass Hero Container */}
-      <div className="w-full glass-panel p-8 md:p-12 text-center border-2 border-amber-500/40 shadow-2xl rounded-3xl flex flex-col items-center justify-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider mb-6 border border-amber-500/40 shadow-md">
+      {/* Main Panel */}
+      <div className="w-full surface p-8 md:p-12 flex flex-col items-center justify-center text-center">
+        <div
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider mb-6"
+          style={{ background: '#ccfbf1', border: '1px solid #99f6e4', color: 'var(--accent-teal)' }}
+        >
           <Sparkles className="w-4 h-4" />
           Inhibition Control & Cognitive Speed
         </div>
 
-        <h2 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight">
-          {isFinished ? 'Stroop Speed Complete! 🎉' : 'Select the INK COLOR! 🎨'}
+        <h2 className="text-2xl md:text-3xl font-extrabold mb-2 tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          {isFinished ? 'Stroop speed complete!' : 'Select the ink color'}
         </h2>
-        <p className="text-sm md:text-base text-gray-300 mb-8 max-w-md">
-          Ignore what the word spells — tap the button matching the font's actual visual ink color!
+        <p className="text-sm md:text-base mb-8 max-w-md" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+          Ignore what the word spells — tap the button matching the font's actual visual ink color.
         </p>
 
         {/* Big Word Display Card */}
         {currentTrial && !isFinished && (
-          <div className="w-full max-w-md bg-slate-950 border-2 border-slate-800 rounded-3xl py-10 mb-8 shadow-2xl flex flex-col items-center justify-center min-h-[160px]">
-            <span className={`text-4xl md:text-6xl font-black uppercase tracking-widest transition-all ${currentTrial.inkColor} ${feedback === 'correct' ? 'scale-110' : feedback === 'wrong' ? 'animate-shake' : ''}`}>
+          <div
+            className="w-full max-w-md rounded-3xl py-10 mb-8 flex flex-col items-center justify-center min-h-[160px]"
+            style={{ background: 'var(--bg-surface-soft)', border: '1px solid var(--border-color)' }}
+          >
+            <span className={`text-4xl md:text-6xl font-extrabold uppercase tracking-widest transition-all ${currentTrial.inkColor} ${feedback === 'correct' ? 'scale-110' : feedback === 'wrong' ? 'animate-shake' : ''}`}>
               {currentTrial.word}
             </span>
 
             {feedback === 'correct' && (
-              <span className="text-emerald-400 text-sm font-black mt-4 flex items-center gap-1.5 animate-fadeIn">
-                <CheckCircle2 className="w-5 h-5" /> Fast & Accurate!
+              <span className="text-sm font-extrabold mt-4 flex items-center gap-1.5 animate-fadeIn" style={{ color: '#047857' }}>
+                <CheckCircle2 className="w-5 h-5" /> Fast & accurate!
               </span>
             )}
             {feedback === 'wrong' && (
-              <span className="text-rose-400 text-sm font-black mt-4 flex items-center gap-1.5 animate-fadeIn">
-                <XCircle className="w-5 h-5" /> Ink color was {currentTrial.inkName}!
+              <span className="text-sm font-extrabold mt-4 flex items-center gap-1.5 animate-fadeIn" style={{ color: '#be123c' }}>
+                <XCircle className="w-5 h-5" /> Ink color was {currentTrial.inkName}
               </span>
             )}
           </div>
         )}
 
-        {/* Reaction Time & XP Badge */}
-        <div className="w-full max-w-md flex items-center justify-between text-xs md:text-sm font-bold text-gray-400 mb-6 px-2">
+        {/* Reaction Time & Score */}
+        <div className="w-full max-w-md flex items-center justify-between text-xs md:text-sm font-bold mb-6 px-2" style={{ color: 'var(--text-secondary)' }}>
           <span className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-amber-400" /> Avg Speed: {avgReactionTime}ms
+            <Clock className="w-4 h-4" style={{ color: 'var(--accent-teal)' }} /> Avg speed: {avgReactionTime}ms
           </span>
-          <span className="text-amber-300 font-extrabold">Total XP: {score}</span>
+          <span className="font-extrabold" style={{ color: 'var(--accent-teal)' }}>Total: {score} pts</span>
         </div>
 
-        {/* 3D Tactile Answer Buttons */}
+        {/* Answer Buttons */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-md">
           {COLOR_OPTIONS.map((opt, idx) => (
             <button
               key={opt.name}
               onClick={() => handleAnswer(opt.name)}
-              className="btn-3d py-3.5 px-3 text-xs bg-slate-800 text-white border-b-4 border-slate-950 hover:bg-slate-700 active:border-b-0 flex items-center justify-between shadow-lg"
+              className="btn-3d py-3.5 px-3 text-xs flex items-center justify-between"
+              style={{ background: '#fff', color: 'var(--text-primary)', borderBottom: '4px solid #d7e0ea' }}
             >
               <div className="flex items-center gap-2">
                 <span className={`w-3.5 h-3.5 rounded-full ${opt.colorClass.replace('text-', 'bg-')}`} />
                 <span>{opt.name}</span>
               </div>
-              <span className="text-[10px] text-gray-400 font-mono font-bold bg-black/30 px-1.5 py-0.5 rounded border border-white/10">
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
                 [{idx + 1}]
               </span>
             </button>

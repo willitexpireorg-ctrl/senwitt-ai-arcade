@@ -21,8 +21,8 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
       id: '1',
       sender: 'witt',
       text: `Hi! I'm Witt, your training coach. Your current Sharpness is ${progress.sharpnessScore} with a ${progress.streakDays}-day streak. Ask me about streaks, logical fallacies, code scoping, or writing fluff — I'll do my best with a few quick tips!`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
   ]);
   const [inputText, setInputText] = useState<string>('');
 
@@ -34,7 +34,7 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
       id: `usr-${Date.now()}`,
       sender: 'user',
       text: inputText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -59,7 +59,7 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
         id: `witt-${Date.now()}`,
         sender: 'witt',
         text: replyText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
       setMessages((prev) => [...prev, wittReply]);
@@ -67,32 +67,39 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-end">
-      <div className="w-full max-w-md bg-slate-950 border-l border-indigo-500/30 flex flex-col h-full shadow-2xl animate-slideLeft">
-        
-        {/* Modal Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-indigo-950/40">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-end">
+      <div
+        className="w-full max-w-md flex flex-col h-full shadow-2xl animate-slideLeft"
+        style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-color)' }}
+      >
+        <div
+          className="p-4 flex items-center justify-between"
+          style={{ borderBottom: '1px solid var(--border-color)', background: '#f0fdfa' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+              style={{ background: 'linear-gradient(145deg, #17a89a, #0f766e)' }}
+            >
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-                Witt Coach <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <h3 className="font-extrabold text-sm flex items-center gap-1.5">
+                Witt Coach <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent-teal)' }} />
               </h3>
-              <span className="text-[10px] text-emerald-400 font-semibold">● Keyword-based coach tips</span>
+              <span className="text-[10px] font-bold" style={{ color: '#059669' }}>● Quick coach tips</span>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-white bg-white/5 border border-white/10"
+            className="p-2 rounded-xl"
+            style={{ color: 'var(--text-secondary)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Message Log */}
         <div className="flex-1 p-4 overflow-y-auto space-y-3 font-sans text-xs leading-relaxed">
           {messages.map((msg) => (
             <div
@@ -100,24 +107,31 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
               className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.sender === 'witt' && (
-                <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white shrink-0 mt-0.5">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
+                  style={{ background: 'var(--accent-teal)' }}
+                >
                   <Bot className="w-4 h-4" />
                 </div>
               )}
 
               <div
-                className={`max-w-[80%] p-3.5 rounded-2xl ${
+                className="max-w-[80%] p-3.5 rounded-2xl font-semibold"
+                style={
                   msg.sender === 'user'
-                    ? 'bg-indigo-600 text-white rounded-br-none'
-                    : 'bg-white/10 text-gray-200 border border-white/10 rounded-bl-none'
-                }`}
+                    ? { background: 'var(--accent-coral)', color: '#fff', borderBottomRightRadius: 4 }
+                    : { background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderBottomLeftRadius: 4 }
+                }
               >
                 <p>{msg.text}</p>
                 <span className="block text-[9px] opacity-60 text-right mt-1">{msg.timestamp}</span>
               </div>
 
               {msg.sender === 'user' && (
-                <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center text-white shrink-0 mt-0.5">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
+                  style={{ background: '#0284c7' }}
+                >
                   <User className="w-4 h-4" />
                 </div>
               )}
@@ -125,24 +139,27 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
           ))}
         </div>
 
-        {/* Input Bar */}
-        <div className="p-3 border-t border-white/10 bg-slate-900 flex items-center gap-2">
+        <div
+          className="p-3 flex items-center gap-2"
+          style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-surface-soft)' }}
+        >
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Ask Witt a question about your cognition..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+            placeholder="Ask Witt about streaks, logic, code…"
+            className="flex-1 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus-ring"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
           />
           <button
             onClick={handleSendMessage}
-            className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/30 shrink-0"
+            className="p-2.5 rounded-xl text-white shrink-0"
+            style={{ background: 'var(--accent-teal)' }}
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
-
       </div>
     </div>
   );

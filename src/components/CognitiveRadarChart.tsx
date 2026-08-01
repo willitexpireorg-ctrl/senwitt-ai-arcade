@@ -56,12 +56,11 @@ export const CognitiveRadarChart: React.FC<CognitiveRadarChartProps> = ({ progre
             key={idx}
             points={points}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.08)"
+            stroke="rgba(15, 39, 68, 0.1)"
             strokeWidth="1"
           />
         ))}
 
-        {/* Radar Spoke Lines */}
         {categories.map((_, idx) => {
           const { x, y } = getCoordinates(idx, 100);
           return (
@@ -71,22 +70,20 @@ export const CognitiveRadarChart: React.FC<CognitiveRadarChartProps> = ({ progre
               y1={center}
               x2={x}
               y2={y}
-              stroke="rgba(255, 255, 255, 0.1)"
+              stroke="rgba(15, 39, 68, 0.12)"
               strokeWidth="1"
             />
           );
         })}
 
-        {/* User Filled Skill Polygon */}
         <polygon
           points={userPoints}
-          fill="rgba(99, 102, 241, 0.25)"
-          stroke="#6366f1"
+          fill="rgba(15, 118, 110, 0.18)"
+          stroke="#0f766e"
           strokeWidth="2.5"
           className="transition-all duration-700 ease-out"
         />
 
-        {/* User Vertex Glowing Points */}
         {categories.map((cat, idx) => {
           const skill = progress.skills[cat.key] || { accuracy: 80 };
           const valPct = Math.min(100, Math.max(30, skill.accuracy));
@@ -97,15 +94,13 @@ export const CognitiveRadarChart: React.FC<CognitiveRadarChartProps> = ({ progre
               cx={x}
               cy={y}
               r="4"
-              fill="#06b6d4"
+              fill="#14b8a6"
               stroke="#ffffff"
               strokeWidth="1.5"
-              className="shadow-lg shadow-cyan-500"
             />
           );
         })}
 
-        {/* Axis Labels */}
         {categories.map((cat, idx) => {
           const { x, y } = getCoordinates(idx, 120);
           return (
@@ -115,7 +110,7 @@ export const CognitiveRadarChart: React.FC<CognitiveRadarChartProps> = ({ progre
               y={y}
               textAnchor="middle"
               dominantBaseline="central"
-              fill="#e2e8f0"
+              fill="#5a7088"
               fontSize="10"
               fontWeight="700"
               className="font-heading uppercase tracking-wider"

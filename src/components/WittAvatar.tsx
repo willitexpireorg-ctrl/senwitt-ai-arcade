@@ -21,23 +21,27 @@ export const WittAvatar: React.FC<WittAvatarProps> = ({ mood = 'encouraging', si
 
   return (
     <div className={`relative flex items-center justify-center ${sizeClasses}`}>
-      
-      {/* Outer Rotating Glowing Ring */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 opacity-60 blur-md animate-pulse-glow" />
-
-      {/* Inner Avatar Core */}
-      <div className={`relative z-10 ${sizeClasses} rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 border border-white/20 flex items-center justify-center shadow-xl animate-float`}>
+      <div
+        className="absolute inset-0 rounded-2xl opacity-50 blur-md animate-pulse-glow"
+        style={{ background: 'linear-gradient(135deg, #14b8a6, #ff5c3a)' }}
+      />
+      <div
+        className={`relative z-10 ${sizeClasses} rounded-2xl flex items-center justify-center shadow-lg animate-float`}
+        style={{
+          background: 'linear-gradient(145deg, #17a89a 0%, #0f766e 100%)',
+          border: '2px solid rgba(255,255,255,0.55)',
+        }}
+      >
         {mood === 'celebratory' ? (
-          <CheckCircle2 className={`${iconSizes} text-emerald-300`} />
+          <CheckCircle2 className={`${iconSizes} text-emerald-100`} />
         ) : mood === 'sharp' ? (
-          <Zap className={`${iconSizes} text-cyan-300 fill-cyan-300/20`} />
+          <Zap className={`${iconSizes} text-cyan-100`} style={{ fill: 'rgba(165,243,252,0.25)' }} />
         ) : mood === 'challenging' ? (
-          <Brain className={`${iconSizes} text-amber-300`} />
+          <Brain className={`${iconSizes} text-amber-100`} />
         ) : (
-          <Sparkles className={`${iconSizes} text-indigo-200`} />
+          <Sparkles className={`${iconSizes} text-teal-50`} />
         )}
       </div>
-
     </div>
   );
 };

@@ -1,20 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Mic, MicOff, Volume2, CheckCircle2, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, MicOff, Volume2, CheckCircle2, X, Save } from 'lucide-react';
 import { VoiceFluencyEngine } from '../services/voiceFluencyEngine';
 import type { VoiceDrillResult } from '../services/voiceFluencyEngine';
 import { playClickSound, playCorrectSound } from '../services/sound';
 
-interface VoiceFluencyDrillProps {
-  onClose: () => void;
+export interface VoiceFluencyCompletionResult {
+  scoreEarned: number;
+  correctCount: number;
+  totalItems: number;
+  totalTimeMs: number;
+  spokenText: string;
 }
 
-export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose }) => {
+interface VoiceFluencyDrillProps {
+  onClose: () => void;
+  onComplete?: (result: VoiceFluencyCompletionResult) => void;
+}
+
+export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose, onComplete }) => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [spokenText, setSpokenText] = useState<string>('');
   const [startTime, setStartTime] = useState<number>(0);
   const [drillResult, setDrillResult] = useState<VoiceDrillResult | null>(null);
   const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
 
+  const sessionStartRef = useRef<number>(Date.now());
   const verbosePrompt = `"At this point in time, it is critically incumbent upon our engineering team to make a concerted effort to optimize workflow processes going forward."`;
   const targetMaxWords = 8;
 
@@ -70,25 +80,42 @@ export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose })
     playCorrectSound();
   };
 
+  const handleSaveAndFinish = () => {
+    playClickSound();
+    if (drillResult && onComplete) {
+      onComplete({
+        scoreEarned: drillResult.concisenessScore,
+        correctCount: drillResult.concisenessScore >= 60 ? 1 : 0,
+        totalItems: 1,
+        totalTimeMs: Date.now() - sessionStartRef.current,
+        spokenText: spokenText.trim(),
+      });
+    }
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="glass-panel max-w-xl w-full p-6 md:p-8 border border-indigo-500/30 text-left relative animate-fadeIn shadow-2xl">
-        
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="surface max-w-xl w-full p-6 md:p-8 text-left relative animate-fadeIn">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
+        <div className="flex items-center justify-between pb-4 mb-6" style={{ borderBottom: '1px solid var(--border-color)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(180deg, #17a89a 0%, var(--accent-teal) 100%)', color: '#fff' }}
+            >
               <Volume2 className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-extrabold text-indigo-400 tracking-wider">Speech Drill</span>
-              <h2 className="text-xl font-extrabold text-white">Voice & Speech Fluency Drill</h2>
+              <span className="text-[10px] uppercase font-extrabold tracking-wider" style={{ color: 'var(--accent-teal)' }}>Speech Drill</span>
+              <h2 className="text-xl font-extrabold" style={{ color: 'var(--text-primary)' }}>Voice & Speech Fluency Drill</h2>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-white bg-white/5 border border-white/10"
+            className="p-2 rounded-xl"
+            style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -96,37 +123,43 @@ export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose })
 
         {/* Prompt Card */}
         <div className="mb-6">
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">
+          <label className="text-xs font-bold uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
             Read verbose text, then speak an 8-word active rewrite out loud:
           </label>
-          <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 text-sm italic text-indigo-200 leading-relaxed">
+          <div
+            className="p-4 rounded-2xl text-sm italic leading-relaxed"
+            style={{ background: '#f0fdfa', border: '1px solid #99f6e4', color: 'var(--text-primary)' }}
+          >
             {verbosePrompt}
           </div>
         </div>
 
         {/* Voice Control Recording Button */}
-        <div className="flex flex-col items-center justify-center py-6 mb-6 bg-white/5 border border-white/10 rounded-2xl">
+        <div
+          className="flex flex-col items-center justify-center py-6 mb-6 rounded-2xl"
+          style={{ background: 'var(--bg-surface-soft)', border: '1px solid var(--border-color)' }}
+        >
           {!isRecording ? (
             <button
               onClick={handleStartRecording}
-              className="gradient-btn text-sm px-6 py-3 shadow-xl flex items-center gap-2"
+              className="btn-3d btn-3d-teal text-sm px-6 py-3 flex items-center gap-2"
             >
-              <Mic className="w-5 h-5 fill-white" />
-              <span>Start Speaking Rewrite</span>
+              <Mic className="w-5 h-5" style={{ fill: '#fff' }} />
+              <span>Start speaking rewrite</span>
             </button>
           ) : (
             <button
               onClick={handleStopRecording}
-              className="px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-xl shadow-rose-500/30 flex items-center gap-2 animate-pulse"
+              className="btn-3d btn-3d-coral text-sm px-6 py-3 flex items-center gap-2 animate-pulse"
             >
               <MicOff className="w-5 h-5" />
-              <span>Stop & Evaluate Speech</span>
+              <span>Stop & evaluate speech</span>
             </button>
           )}
 
           {/* Live Spoken Transcript */}
           {spokenText && (
-            <div className="mt-4 px-4 text-xs text-cyan-300 font-mono text-center">
+            <div className="mt-4 px-4 text-xs font-mono text-center" style={{ color: 'var(--accent-teal)' }}>
               "{spokenText}"
             </div>
           )}
@@ -134,29 +167,42 @@ export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose })
 
         {/* Evaluation Results Card */}
         {drillResult && (
-          <div className="p-5 rounded-2xl bg-white/5 border border-emerald-500/30 animate-fadeIn space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" /> Conciseness Score: {drillResult.concisenessScore}%
+          <div
+            className="p-5 rounded-2xl space-y-4"
+            style={{ background: '#f0fdfa', border: '1px solid #99f6e4' }}
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#047857' }}>
+                <CheckCircle2 className="w-4 h-4" /> Conciseness score: {drillResult.concisenessScore}%
               </span>
-              <span className="text-xs font-bold text-violet-300 px-2.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
-                Fluency Level: {drillResult.brocaActivationLevel}
+              <span
+                className="text-xs font-extrabold px-2.5 py-0.5 rounded-full"
+                style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c' }}
+              >
+                Fluency level: {drillResult.brocaActivationLevel}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
-              <div className="bg-white/5 p-2.5 rounded-xl">
-                <span className="text-[10px] text-gray-400 block font-semibold uppercase">Spoken Word Count</span>
-                <span className="text-sm font-bold text-white">{drillResult.wordCount} Words (Target ≤ {targetMaxWords})</span>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2.5 rounded-xl" style={{ background: '#fff', border: '1px solid var(--border-color)' }}>
+                <span className="text-[10px] block font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Spoken word count</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{drillResult.wordCount} words (target ≤ {targetMaxWords})</span>
               </div>
-              <div className="bg-white/5 p-2.5 rounded-xl">
-                <span className="text-[10px] text-gray-400 block font-semibold uppercase">Speech Velocity</span>
-                <span className="text-sm font-bold text-white">{drillResult.wordsPerMinute} WPM</span>
+              <div className="p-2.5 rounded-xl" style={{ background: '#fff', border: '1px solid var(--border-color)' }}>
+                <span className="text-[10px] block font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>Speech velocity</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{drillResult.wordsPerMinute} WPM</span>
               </div>
             </div>
+
+            <button
+              onClick={handleSaveAndFinish}
+              className="btn-3d btn-3d-teal w-full py-3 text-sm flex items-center justify-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save & finish</span>
+            </button>
           </div>
         )}
-
       </div>
     </div>
   );

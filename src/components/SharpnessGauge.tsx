@@ -17,18 +17,14 @@ export const SharpnessGauge: React.FC<SharpnessGaugeProps> = ({ score, maxScore 
   return (
     <div className="relative inline-flex items-center justify-center">
       <svg width={size} height={size} className="transform -rotate-90">
-        
-        {/* Background Arc */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255, 255, 255, 0.08)"
+          stroke="rgba(15, 39, 68, 0.08)"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
-
-        {/* Dynamic Progress Gradient Arc */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -41,23 +37,27 @@ export const SharpnessGauge: React.FC<SharpnessGaugeProps> = ({ score, maxScore 
           fill="transparent"
           className="transition-all duration-1000 ease-out"
         />
-
         <defs>
           <linearGradient id="sharpnessGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#6366f1" />
-            <stop offset="50%" stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#06b6d4" />
+            <stop offset="0%" stopColor="#0f766e" />
+            <stop offset="55%" stopColor="#14b8a6" />
+            <stop offset="100%" stopColor="#ff5c3a" />
           </linearGradient>
         </defs>
       </svg>
 
-      {/* Center Text Display */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <Zap className="w-5 h-5 text-indigo-400 fill-indigo-400/20 mb-0.5 animate-pulse-glow" />
-        <span className="font-heading font-black text-2xl text-white tracking-tight leading-none">
+        <Zap className="w-5 h-5 mb-0.5" style={{ color: 'var(--accent-teal)', fill: 'rgba(20,184,166,0.2)' }} />
+        <span
+          className="font-black text-2xl tracking-tight leading-none"
+          style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}
+        >
           {score}
         </span>
-        <span className="text-[10px] uppercase font-bold text-indigo-300/80 tracking-wider mt-0.5">
+        <span
+          className="text-[10px] uppercase font-extrabold tracking-wider mt-0.5"
+          style={{ color: 'var(--accent-teal)' }}
+        >
           Sharpness
         </span>
       </div>

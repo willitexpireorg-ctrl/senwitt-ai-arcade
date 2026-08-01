@@ -1,16 +1,19 @@
 {
-  "name": "SENWITT AI - Cognitive OS",
+  "name": "SENWITT — Daily Brain Training",
   "short_name": "SENWITT",
-  "description": "AI-Era Skill Maintenance & Cognitive Resilience Operating System",
+  "description": "5-minute daily cognitive workouts across writing, logic, code, memory, reading, and reasoning.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#090d16",
-  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "background_color": "#eef3f8",
+  "theme_color": "#0f766e",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

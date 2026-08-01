@@ -1,10 +1,11 @@
-import type { ExerciseItem } from '../types';
+import type { ExerciseItem, SkillCategory } from '../types';
+import { EXERCISE_BANK_EXTRA } from './exerciseBankExtra';
 
 // Curated, handcrafted exercise bank. Every item below is a distinct,
 // real question with a real explanation — no procedurally generated
 // "Variation #N" filler and no answers that are trivially markable by
 // their position or label in the option text.
-export const EXERCISE_BANK: ExerciseItem[] = [
+export const EXERCISE_BANK_CORE: ExerciseItem[] = [
   // ─────────────────────────────── WRITING ───────────────────────────────
   {
     id: 'writing-01',
@@ -749,6 +750,10 @@ console.log('D');`,
   },
 ];
 
+// Full exercise bank: curated core set plus the expanded second wave,
+// bringing coverage to ~25 handcrafted items per category (~150 total).
+export const EXERCISE_BANK: ExerciseItem[] = [...EXERCISE_BANK_CORE, ...EXERCISE_BANK_EXTRA];
+
 // Fisher-Yates (Knuth) uniform shuffle.
 export const fisherYatesShuffle = <T>(array: T[]): T[] => {
   const result = [...array];
@@ -765,15 +770,67 @@ export const withShuffledOptions = (item: ExerciseItem): ExerciseItem => {
   return { ...item, options: fisherYatesShuffle(item.options) };
 };
 
-export const getDailySetForMode = (mode: 'daily' | 'coffee_break' | 'weekend_long'): ExerciseItem[] => {
-  const pool = fisherYatesShuffle(EXERCISE_BANK).map(withShuffledOptions);
+const ALL_CATEGORIES: SkillCategory[] = ['writing', 'math', 'code', 'memory', 'reading', 'reasoning'];
 
-  if (mode === 'coffee_break') {
-    return pool.slice(0, 3);
-  } else if (mode === 'weekend_long') {
-    return pool.slice(0, 8);
+/**
+ * Build a daily/coffee-break/weekend set that is:
+ *  - Anti-repeat: prefers items the caller marks as already-seen (excludeIds)
+ *    are avoided first, falling back to them only if the fresh pool runs dry.
+ *  - Category-balanced: draws one item per distinct category (round-robin)
+ *    before topping up the remainder from the leftover shuffled pool.
+ */
+export const getDailySetForMode = (
+  mode: 'daily' | 'coffee_break' | 'weekend_long',
+  options?: { excludeIds?: string[] },
+): ExerciseItem[] => {
+  const count = mode === 'coffee_break' ? 3 : mode === 'weekend_long' ? 8 : 5;
+  const exclude = new Set(options?.excludeIds ?? []);
+
+  const fresh = EXERCISE_BANK.filter((item) => !exclude.has(item.id));
+  // If excluding everything would starve the pool below what we need, fall
+  // back to the full bank so a set can still be assembled.
+  const basePool = fresh.length >= count ? fresh : EXERCISE_BANK;
+
+  const byCategory = new Map<SkillCategory, ExerciseItem[]>();
+  ALL_CATEGORIES.forEach((cat) => byCategory.set(cat, []));
+  fisherYatesShuffle(basePool).forEach((item) => {
+    byCategory.get(item.category)?.push(item);
+  });
+
+  const selected: ExerciseItem[] = [];
+  const selectedIds = new Set<string>();
+  const shuffledCategories = fisherYatesShuffle(ALL_CATEGORIES);
+
+  // Pass 1: round-robin one item per distinct category until count is hit
+  // or every category's pool is exhausted.
+  let progressed = true;
+  while (selected.length < count && progressed) {
+    progressed = false;
+    for (const cat of shuffledCategories) {
+      if (selected.length >= count) break;
+      const pool = byCategory.get(cat) ?? [];
+      const next = pool.shift();
+      if (next && !selectedIds.has(next.id)) {
+        selected.push(next);
+        selectedIds.add(next.id);
+        progressed = true;
+      }
+    }
   }
-  return pool.slice(0, 5);
+
+  // Pass 2: top up remainder from whatever is left, shuffled.
+  if (selected.length < count) {
+    const leftover = fisherYatesShuffle(
+      basePool.filter((item) => !selectedIds.has(item.id)),
+    );
+    for (const item of leftover) {
+      if (selected.length >= count) break;
+      selected.push(item);
+      selectedIds.add(item.id);
+    }
+  }
+
+  return fisherYatesShuffle(selected).map(withShuffledOptions);
 };
 
 /** Pick N curated items for a skill, with shuffled option order. */
@@ -781,8 +838,17 @@ export const getSkillPracticeSet = (
   skill: ExerciseItem['category'],
   count = 3,
   bank: ExerciseItem[] = EXERCISE_BANK,
+  options?: { excludeIds?: string[] },
 ): ExerciseItem[] => {
-  const matching = bank.filter((item) => item.category === skill);
-  const pool = fisherYatesShuffle(matching.length > 0 ? matching : bank);
+  const exclude = new Set(options?.excludeIds ?? []);
+  const allMatching = bank.filter((item) => item.category === skill);
+  const freshMatching = allMatching.filter((item) => !exclude.has(item.id));
+
+  // Prefer unused items first, then top up with previously-seen ones if the
+  // fresh pool can't cover the requested count on its own.
+  const ordered = [...fisherYatesShuffle(freshMatching), ...fisherYatesShuffle(
+    allMatching.filter((item) => exclude.has(item.id)),
+  )];
+  const pool = ordered.length > 0 ? ordered : fisherYatesShuffle(bank);
   return pool.slice(0, count).map(withShuffledOptions);
 };
