@@ -35,7 +35,20 @@ async function probeUnityBuild(): Promise<{
   frameworkUrl: string;
   codeUrl: string;
 } | null> {
+  // Unity 6 gzip/brotli builds keep *.loader.js uncompressed and compress the rest.
   const candidates = [
+    {
+      loaderUrl: `${UNITY_BASE}/Build/spatial-memory.loader.js`,
+      dataUrl: `${UNITY_BASE}/Build/spatial-memory.data.gz`,
+      frameworkUrl: `${UNITY_BASE}/Build/spatial-memory.framework.js.gz`,
+      codeUrl: `${UNITY_BASE}/Build/spatial-memory.wasm.gz`,
+    },
+    {
+      loaderUrl: `${UNITY_BASE}/Build/spatial-memory.loader.js`,
+      dataUrl: `${UNITY_BASE}/Build/spatial-memory.data.br`,
+      frameworkUrl: `${UNITY_BASE}/Build/spatial-memory.framework.js.br`,
+      codeUrl: `${UNITY_BASE}/Build/spatial-memory.wasm.br`,
+    },
     {
       loaderUrl: `${UNITY_BASE}/Build/spatial-memory.loader.js`,
       dataUrl: `${UNITY_BASE}/Build/spatial-memory.data`,
@@ -44,16 +57,18 @@ async function probeUnityBuild(): Promise<{
     },
     {
       loaderUrl: `${UNITY_BASE}/Build/Build.loader.js`,
-      dataUrl: `${UNITY_BASE}/Build/Build.data`,
-      frameworkUrl: `${UNITY_BASE}/Build/Build.framework.js`,
-      codeUrl: `${UNITY_BASE}/Build/Build.wasm`,
+      dataUrl: `${UNITY_BASE}/Build/Build.data.gz`,
+      frameworkUrl: `${UNITY_BASE}/Build/Build.framework.js.gz`,
+      codeUrl: `${UNITY_BASE}/Build/Build.wasm.gz`,
     },
   ];
 
   for (const c of candidates) {
     try {
-      const res = await fetch(c.loaderUrl, { method: 'HEAD' });
-      if (res.ok) return c;
+      const loader = await fetch(c.loaderUrl, { method: 'HEAD' });
+      if (!loader.ok) continue;
+      const data = await fetch(c.dataUrl, { method: 'HEAD' });
+      if (data.ok) return c;
     } catch {
       // try next
     }

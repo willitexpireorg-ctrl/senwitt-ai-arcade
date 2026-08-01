@@ -1,2 +1,2 @@
-m_EditorVersion: 6000.5.0f1
-m_EditorVersionWithRevision: 6000.5.0f1 (pending-local-install)
+m_EditorVersion: 6000.5.6f1
+m_EditorVersionWithRevision: 6000.5.6f1 (installed)

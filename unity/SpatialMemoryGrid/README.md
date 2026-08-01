@@ -12,17 +12,19 @@ In **Unity Hub → Installs**, confirm for your **6.5** editor:
 
 Product version string looks like `6000.5.x` (Unity 6.5).
 
-## Recommended first open (clean project)
+## Active project (already created)
 
-The `Assets/` scripts here are meant to be dropped into a Hub-created project  
-(avoids missing default packages).
+Use the Hub/editor project at:
 
-1. Hub → **New project** → **2D (Built-In)** or **2D (URP)** → Unity **6.5**
-2. Name it e.g. `SenwittSpatialMemory`, create it anywhere
-3. Copy this repo’s folder into the new project:
-   - From: `…/app/unity/SpatialMemoryGrid/Assets/Scripts` + `Assets/Plugins`
-   - To: `<your-new-project>/Assets/` (merge)
-4. Open the new project in the editor
+```text
+app/unity/SenwittSpatialMemory
+```
+
+(Unity **6000.5.6f1**, uGUI added, scene + batch WebGL builder under `Assets/Editor/SenwittSpatialBuild.cs`.)
+
+Open that folder in Unity Hub → **Add** → open with 6.5. Menu: **SENWITT → Build WebGL → public/unity/spatial-memory**.
+
+Script sources are also mirrored under `unity/SpatialMemoryGrid/Assets/` for the repo scaffold.
 
 ### Minimal scene
 
