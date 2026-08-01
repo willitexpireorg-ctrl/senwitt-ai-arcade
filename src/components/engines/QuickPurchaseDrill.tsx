@@ -24,6 +24,7 @@ interface PurchaseItem {
 }
 
 const SOFT_TARGET_SECONDS = 20;
+const ITEMS_PER_SESSION = 6;
 
 const ITEMS: PurchaseItem[] = [
   {
@@ -54,10 +55,71 @@ const ITEMS: PurchaseItem[] = [
     correctIndex: 1,
     explanation: 'Deal A: $18 / 3 = $6.00 each. Deal B: $27 / 5 = $5.40 each — Deal B wins per unit.',
   },
+  {
+    id: 'qp-tax',
+    prompt: 'An invoice subtotal is $250, and sales tax is 8%. What\u2019s the total due?',
+    options: ['$270', '$258', '$265', '$275'],
+    correctIndex: 0,
+    explanation: '8% of $250 is $20. $250 + $20 = $270.',
+  },
+  {
+    id: 'qp-split',
+    prompt: 'Dinner for 4 comes to $132 total, split evenly. About how much does each person owe?',
+    options: ['$28', '$38', '$44', '$33'],
+    correctIndex: 3,
+    explanation: '$132 / 4 = $33 per person.',
+  },
+  {
+    id: 'qp-unitprice',
+    prompt: 'One shampoo bottle is $6 for 12 oz. Another is $9 for 20 oz. Which is the better per-ounce deal?',
+    options: ['12 oz bottle — $0.50/oz', 'They\u2019re equal per ounce', '20 oz bottle — $0.45/oz', 'Not enough info to tell'],
+    correctIndex: 2,
+    explanation: '$6 / 12 oz = $0.50/oz. $9 / 20 oz = $0.45/oz — the larger bottle is cheaper per ounce.',
+  },
+  {
+    id: 'qp-overtime',
+    prompt: 'You earn $22/hour, and overtime pays 1.5×. What do you earn for a 4-hour overtime shift?',
+    options: ['$132', '$88', '$110', '$154'],
+    correctIndex: 0,
+    explanation: '$22 × 1.5 = $33/hour overtime rate. $33 × 4 hours = $132.',
+  },
+  {
+    id: 'qp-mileage',
+    prompt: 'Your company reimburses $0.65 per mile. A round trip is 84 miles. What\u2019s the reimbursement?',
+    options: ['$42.00', '$50.40', '$58.80', '$54.60'],
+    correctIndex: 3,
+    explanation: '84 miles × $0.65/mile = $54.60.',
+  },
+  {
+    id: 'qp-raise',
+    prompt: 'Your salary is $62,000 and you get a 4% raise. What\u2019s your new salary?',
+    options: ['$63,240', '$64,000', '$64,480', '$65,240'],
+    correctIndex: 2,
+    explanation: '4% of $62,000 is $2,480. $62,000 + $2,480 = $64,480.',
+  },
+  {
+    id: 'qp-breakeven',
+    prompt: 'A coffee subscription costs $18/month but saves you $3 every time you skip a café visit. How many skipped visits cover the monthly cost?',
+    options: ['6 visits', '4 visits', '8 visits', '9 visits'],
+    correctIndex: 0,
+    explanation: '$18 / $3 per visit = 6 skipped visits to break even.',
+  },
+  {
+    id: 'qp-stacked',
+    prompt: 'A $60 item is 20% off, then 7% sales tax is added to the discounted price. What\u2019s the final price?',
+    options: ['$54.00', '$48.00', '$50.00', '$51.36'],
+    correctIndex: 3,
+    explanation: '$60 × 0.80 = $48 after the discount. $48 × 1.07 = $51.36 after tax.',
+  },
 ];
 
+const pickItems = (): PurchaseItem[] => {
+  const shuffled = [...ITEMS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, ITEMS_PER_SESSION);
+};
+
 export const QuickPurchaseDrill: React.FC<QuickPurchaseDrillProps> = ({ onComplete, onCancel }) => {
-  const [items] = useState<PurchaseItem[]>(ITEMS);
+  const [items] = useState<PurchaseItem[]>(pickItems);
   const [index, setIndex] = useState<number>(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
@@ -67,6 +129,7 @@ export const QuickPurchaseDrill: React.FC<QuickPurchaseDrillProps> = ({ onComple
 
   const drillStartRef = useRef<number>(Date.now());
   const itemStartRef = useRef<number>(Date.now());
+  const finishedRef = useRef(false);
   const currentItem = items[index];
 
   useEffect(() => {
@@ -99,6 +162,8 @@ export const QuickPurchaseDrill: React.FC<QuickPurchaseDrillProps> = ({ onComple
   const handleNext = () => {
     playClickSound();
     if (index + 1 >= items.length) {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       playFanfareSound();
       onComplete({
         scoreEarned: score,

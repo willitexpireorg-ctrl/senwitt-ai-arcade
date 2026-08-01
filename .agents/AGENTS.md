@@ -1,5 +1,10 @@
 # Vercel AI Agent Rules & Workspace Guidelines
 
+> **Project memory (read first):** [`../SESSION_HANDOFF.md`](../SESSION_HANDOFF.md)  
+> Cursor always-apply rule: [`.cursor/rules/senwitt-handoff.mdc`](../.cursor/rules/senwitt-handoff.mdc)  
+> If this file conflicts with the handoff on product direction (e.g. Three.js backgrounds, procedural generators), **follow SESSION_HANDOFF.md**.  
+> **Game quality agent/skill:** [`.agents/skills/senwitt-game-quality/SKILL.md`](skills/senwitt-game-quality/SKILL.md) (+ `agent.md`) — use when improving arcade/daily drills.
+
 All AI coding subagents working in this codebase MUST strictly follow Vercel's Official React & AI Agent Best Practices:
 
 ## 1. Deterministic Logic Over Prompting

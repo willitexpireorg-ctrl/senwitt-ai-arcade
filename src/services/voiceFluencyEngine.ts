@@ -4,7 +4,8 @@ export interface VoiceDrillResult {
   spokenDurationSec: number;
   wordsPerMinute: number;
   concisenessScore: number;
-  brocaActivationLevel: 'Optimal' | 'High' | 'Moderate';
+  /** Plain-language conciseness tier — not a claim about brain activity. */
+  fluencyLevel: 'Sharp' | 'Good' | 'Needs trimming';
 }
 
 export class VoiceFluencyEngine {
@@ -30,13 +31,13 @@ export class VoiceFluencyEngine {
       concisenessScore = 0;
     }
 
-    let brocaActivationLevel: 'Optimal' | 'High' | 'Moderate' = 'Optimal';
+    let fluencyLevel: 'Sharp' | 'Good' | 'Needs trimming' = 'Sharp';
     if (concisenessScore >= 85) {
-      brocaActivationLevel = 'Optimal';
+      fluencyLevel = 'Sharp';
     } else if (concisenessScore >= 60) {
-      brocaActivationLevel = 'High';
+      fluencyLevel = 'Good';
     } else {
-      brocaActivationLevel = 'Moderate';
+      fluencyLevel = 'Needs trimming';
     }
 
     return {
@@ -45,7 +46,7 @@ export class VoiceFluencyEngine {
       spokenDurationSec,
       wordsPerMinute,
       concisenessScore: Math.round(concisenessScore),
-      brocaActivationLevel
+      fluencyLevel
     };
   }
 

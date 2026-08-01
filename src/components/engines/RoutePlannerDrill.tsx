@@ -119,6 +119,63 @@ const PUZZLE_BANK: RoutePuzzle[] = [
     targetMoves: 8,
     generousMoves: 10,
   },
+  {
+    id: 'route-9',
+    size: 5,
+    start: [4, 4],
+    waypoints: [[0, 0], [0, 4], [4, 0]],
+    blocked: [[2, 1], [2, 3]],
+    targetMoves: 14,
+    generousMoves: 17,
+  },
+  {
+    id: 'route-10',
+    size: 6,
+    start: [2, 2],
+    waypoints: [[0, 0], [0, 5], [5, 0], [5, 5]],
+    blocked: [],
+    // Hand-verified minimum for a 4-corner visit from center is 19 moves
+    // (e.g. [2,2]->[0,0]->[0,5]->[5,5]->[5,0]) — 18 was unreachable, which
+    // meant "Optimal route" could never be earned on this puzzle.
+    targetMoves: 19,
+    generousMoves: 22,
+  },
+  {
+    id: 'route-11',
+    size: 5,
+    start: [0, 2],
+    waypoints: [[4, 0], [4, 4]],
+    blocked: [[2, 0], [2, 4]],
+    targetMoves: 10,
+    generousMoves: 13,
+  },
+  {
+    id: 'route-12',
+    size: 6,
+    start: [5, 0],
+    waypoints: [[0, 0], [0, 5]],
+    blocked: [[2, 2], [3, 2]],
+    targetMoves: 11,
+    generousMoves: 14,
+  },
+  {
+    id: 'route-13',
+    size: 5,
+    start: [2, 4],
+    waypoints: [[0, 0], [4, 0]],
+    blocked: [[1, 2], [3, 2]],
+    targetMoves: 10,
+    generousMoves: 13,
+  },
+  {
+    id: 'route-14',
+    size: 6,
+    start: [0, 0],
+    waypoints: [[2, 3], [5, 5], [5, 0]],
+    blocked: [[1, 3], [3, 1]],
+    targetMoves: 16,
+    generousMoves: 20,
+  },
 ];
 
 const shuffle = <T,>(arr: T[]): T[] => {

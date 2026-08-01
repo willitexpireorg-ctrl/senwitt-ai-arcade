@@ -23,6 +23,8 @@ interface RewriteItem {
   explanation: string;
 }
 
+const ITEMS_PER_SESSION = 6;
+
 const ITEMS: RewriteItem[] = [
   {
     id: 'rw1',
@@ -76,10 +78,119 @@ const ITEMS: RewriteItem[] = [
     correctIndex: 1,
     explanation: 'Clear ask (triage today) plus the number that makes urgency concrete (40 open, up from 12).',
   },
+  {
+    id: 'rw5',
+    verbose:
+      'I guess what I\u2019m sort of trying to say, in a roundabout way, is that it might be a good idea for us to maybe think about possibly revisiting the pricing page copy at some point soon-ish.',
+    options: [
+      'Can we revisit the pricing page copy this week? Support tickets suggest it\u2019s confusing.',
+      'Pricing page copy, revisit, at some point, thoughts welcome I suppose.',
+      'It might be a good idea to maybe think about the pricing page eventually.',
+      'The pricing page is fine as is, no changes needed for now probably.',
+    ],
+    correctIndex: 0,
+    explanation: 'Names the concrete ask (revisit this week) and the reason (confusing per tickets) — the hedging is gone.',
+  },
+  {
+    id: 'rw6',
+    verbose:
+      'Not to be a bother or anything, but I was kind of curious if it would be possible to maybe get an update on where things stand with the vendor contract whenever that\u2019s convenient for you.',
+    options: [
+      'Any update on the vendor contract? No rush, just checking in.',
+      'Could you send a status update on the vendor contract by end of day Friday?',
+      'Curious about contract stuff whenever, no pressure or anything really.',
+      'The vendor contract update would be nice to have sometime, maybe.',
+    ],
+    correctIndex: 1,
+    explanation: 'Adds a concrete deadline (Friday) to a vague "whenever\u2019s convenient" ask, making it actionable.',
+  },
+  {
+    id: 'rw7',
+    verbose:
+      'Just wanted to sort of flag, in case it\u2019s useful information, that there could potentially be a chance that the dashboard numbers might not be totally in sync with what\u2019s in the database right now.',
+    options: [
+      'Heads up: dashboard numbers might be a little off, just flagging for awareness.',
+      'The dashboard is currently showing stale data — last synced 6 hours ago, refresh before reporting on it.',
+      'There could potentially be some kind of sync issue somewhere, maybe.',
+      'In case it\u2019s useful, the numbers and database might not fully agree right now.',
+    ],
+    correctIndex: 1,
+    explanation: 'States the specific problem (stale data, 6 hours) and the actionable fix (refresh before reporting) instead of hedging.',
+  },
+  {
+    id: 'rw8',
+    verbose:
+      'So this is maybe a silly question and please ignore if it\u2019s already been answered somewhere, but I was wondering if anyone happens to know off the top of their head when the next release is roughly planned for.',
+    options: [
+      'When is the next release planned? Trying to plan my QA schedule around it.',
+      'Silly question maybe, ignore if answered, but release timing, does anyone know?',
+      'Just curious about release stuff whenever someone gets a chance to mention it.',
+      'Apologies in advance if this has come up before regarding release timing.',
+    ],
+    correctIndex: 0,
+    explanation: 'Drops the apologetic hedging and states both the question and the reason it matters (QA scheduling).',
+  },
+  {
+    id: 'rw9',
+    verbose:
+      'I don\u2019t want to overstep or anything since I know this isn\u2019t really my area, but it did kind of seem like maybe the onboarding flow has gotten a bit long compared to before, just an observation.',
+    options: [
+      'Onboarding now takes 9 steps, up from 5 last quarter — worth a look before the next cohort.',
+      'Just an observation, not my area, but onboarding seems longer maybe, no big deal.',
+      'I don\u2019t want to overstep, but something about onboarding felt off recently.',
+      'Onboarding has gotten longer I think, though I could be wrong about that.',
+    ],
+    correctIndex: 0,
+    explanation: 'Replaces a hedged "observation" with a specific, checkable fact (9 steps vs. 5) and a reason to act.',
+  },
+  {
+    id: 'rw10',
+    verbose:
+      'Hey, super random question, but do you happen to maybe know if there\u2019s any chance we could possibly get access to the staging environment sometime before the demo, if that\u2019s not too much to ask?',
+    options: [
+      'Can I get staging access before Thursday\u2019s demo?',
+      'Random question, staging access, demo coming up, if possible maybe?',
+      'Not trying to ask for too much, but staging access would be nice eventually.',
+      'Wondering about staging environment access at some point before things happen.',
+    ],
+    correctIndex: 0,
+    explanation: 'Keeps the concrete ask (staging access) and a real deadline (Thursday\u2019s demo) — everything else is filler.',
+  },
+  {
+    id: 'rw11',
+    verbose:
+      'Just so everyone\u2019s on the same page and there\u2019s no confusion later, I wanted to sort of reiterate that the deadline we previously discussed is still technically the deadline, even though some things have changed since then.',
+    options: [
+      'Reminder: the March 15 deadline still stands despite the recent scope changes.',
+      'Just reiterating that the deadline is still the deadline, sort of, for now.',
+      'To avoid confusion, the previously discussed thing is still the thing we discussed.',
+      'Things have changed, but the deadline hasn\u2019t changed, if that makes sense.',
+    ],
+    correctIndex: 0,
+    explanation: 'Gives the actual date and names what changed (scope) instead of circling around "the deadline is still the deadline."',
+  },
+  {
+    id: 'rw12',
+    verbose:
+      'I could be totally off base here, and feel free to correct me if I\u2019m wrong, but it sort of feels like maybe the new pricing tiers could possibly be a little confusing to some customers, potentially.',
+    options: [
+      'Three support tickets this week asked which pricing tier includes API access — the tiers may need clearer labels.',
+      'Could be wrong, but pricing tiers maybe seem a bit confusing potentially, to some.',
+      'Feel free to correct me, but something about pricing might confuse someone.',
+      'Pricing tiers might be a little unclear, I guess, possibly, to be determined.',
+    ],
+    correctIndex: 0,
+    explanation: 'Backs the vague hedge with concrete evidence (3 tickets, specific confusion) that makes the concern actionable.',
+  },
 ];
 
+const pickItems = (): RewriteItem[] => {
+  const shuffled = [...ITEMS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, ITEMS_PER_SESSION);
+};
+
 export const ClearerSentenceDrill: React.FC<ClearerSentenceDrillProps> = ({ onComplete, onCancel }) => {
-  const [items] = useState<RewriteItem[]>(ITEMS);
+  const [items] = useState<RewriteItem[]>(pickItems);
   const [index, setIndex] = useState<number>(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
@@ -87,6 +198,7 @@ export const ClearerSentenceDrill: React.FC<ClearerSentenceDrillProps> = ({ onCo
   const [correctCount, setCorrectCount] = useState<number>(0);
 
   const drillStartRef = useRef<number>(Date.now());
+  const finishedRef = useRef(false);
   const currentItem = items[index];
 
   const handleSelect = (idx: number) => {
@@ -111,6 +223,8 @@ export const ClearerSentenceDrill: React.FC<ClearerSentenceDrillProps> = ({ onCo
   const handleNext = () => {
     playClickSound();
     if (index + 1 >= items.length) {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       playFanfareSound();
       onComplete({
         scoreEarned: score,

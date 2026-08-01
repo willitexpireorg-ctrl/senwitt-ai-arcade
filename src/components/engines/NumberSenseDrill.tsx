@@ -23,6 +23,8 @@ interface NumberItem {
   explanation: string;
 }
 
+const ITEMS_PER_SESSION = 6;
+
 const ITEMS: NumberItem[] = [
   {
     id: 'ns1',
@@ -62,10 +64,86 @@ const ITEMS: NumberItem[] = [
     correctIndex: 1,
     explanation: 'A sample size of 5 people can\u2019t support an industry-wide claim — the ratio might be real but wildly unrepresentative.',
   },
+  {
+    id: 'ns5',
+    prompt: 'Headcount dropped from 40 to 34 people this year. What\u2019s the percentage decrease?',
+    options: ['6%', '10%', '15%', '20%'],
+    correctIndex: 2,
+    explanation: 'The drop is 6 people. 6 / 40 = 0.15, i.e. a 15% decrease.',
+  },
+  {
+    id: 'ns6',
+    prompt: 'A dashboard says conversion "doubled from 2% to 4%." Is describing that as a "100% increase" accurate?',
+    options: [
+      'No — a 2-point change is only a 2% increase',
+      'Yes — going from 2% to 4% is exactly a 100% relative increase',
+      'No — percentages can\u2019t be doubled',
+      'Yes, but only if the sample size is over 1,000',
+    ],
+    correctIndex: 1,
+    explanation: 'Relative change: (4−2)/2 = 1.0 = 100% increase. The rate doubled even though the point gap is only 2.',
+  },
+  {
+    id: 'ns7',
+    prompt: 'A survey of 40 customers found 30 were "satisfied." What percentage is that, and is 40 people enough to trust for a 10,000-customer product?',
+    options: [
+      '75% satisfied, and 40 people is plenty for any claim',
+      '75% satisfied, but 40 people is a thin sample for a 10,000-customer base',
+      '30% satisfied, and the sample size doesn\u2019t matter',
+      '133% satisfied, which is impossible so the data is wrong',
+    ],
+    correctIndex: 1,
+    explanation: '30/40 = 75%. That\u2019s the right math, but 40 respondents out of 10,000 customers is a small, possibly unrepresentative slice.',
+  },
+  {
+    id: 'ns8',
+    prompt: 'Your bug count went from 120 to 90 after a cleanup sprint. What\u2019s the percentage reduction?',
+    options: ['20%', '25%', '30%', '33%'],
+    correctIndex: 1,
+    explanation: '120 − 90 = 30 fewer bugs. 30 / 120 = 0.25, a 25% reduction.',
+  },
+  {
+    id: 'ns9',
+    prompt: 'A chart\u2019s Y-axis starts at 80 instead of 0, making a change from 82 to 86 look huge. What\u2019s the real percentage change?',
+    options: [
+      'About 5% — the axis truncation exaggerates the visual jump',
+      'About 50%, matching how big the bars look',
+      'It can\u2019t be calculated without the full axis',
+      'About 25%',
+    ],
+    correctIndex: 0,
+    explanation: '(86−82)/82 ≈ 4.9%. Truncating the Y-axis makes a modest change look dramatic — always check the axis start.',
+  },
+  {
+    id: 'ns10',
+    prompt: 'A vendor says their tool is "3x faster." The old process took 12 minutes. How long should the new one take if the claim holds?',
+    options: ['9 minutes', '6 minutes', '4 minutes', '3 minutes'],
+    correctIndex: 2,
+    explanation: '"3x faster" means 1/3 the time: 12 / 3 = 4 minutes.',
+  },
+  {
+    id: 'ns11',
+    prompt: 'Two teams report error rates: Team A has 4 errors out of 200 tasks; Team B has 9 errors out of 500 tasks. Which team has the lower error rate?',
+    options: ['Team A — 2.0%', 'Team B — 1.8%', 'They\u2019re exactly equal', 'Can\u2019t compare without more context'],
+    correctIndex: 1,
+    explanation: 'Team A: 4/200 = 2.0%. Team B: 9/500 = 1.8%. Team B\u2019s rate is slightly lower despite more raw errors.',
+  },
+  {
+    id: 'ns12',
+    prompt: 'A budget memo says costs rose "by $5,000, or about 40%." What was the original budget, roughly?',
+    options: ['$8,000', '$10,000', '$12,500', '$20,000'],
+    correctIndex: 2,
+    explanation: 'If $5,000 is 40% of the original, the original ≈ $5,000 / 0.40 = $12,500.',
+  },
 ];
 
+const pickItems = (): NumberItem[] => {
+  const shuffled = [...ITEMS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, ITEMS_PER_SESSION);
+};
+
 export const NumberSenseDrill: React.FC<NumberSenseDrillProps> = ({ onComplete, onCancel }) => {
-  const [items] = useState<NumberItem[]>(ITEMS);
+  const [items] = useState<NumberItem[]>(pickItems);
   const [index, setIndex] = useState<number>(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
@@ -73,6 +151,7 @@ export const NumberSenseDrill: React.FC<NumberSenseDrillProps> = ({ onComplete, 
   const [correctCount, setCorrectCount] = useState<number>(0);
 
   const drillStartRef = useRef<number>(Date.now());
+  const finishedRef = useRef(false);
   const currentItem = items[index];
 
   const handleSelect = (idx: number) => {
@@ -97,6 +176,8 @@ export const NumberSenseDrill: React.FC<NumberSenseDrillProps> = ({ onComplete, 
   const handleNext = () => {
     playClickSound();
     if (index + 1 >= items.length) {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       playFanfareSound();
       onComplete({
         scoreEarned: score,

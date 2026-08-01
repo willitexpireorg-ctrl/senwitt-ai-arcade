@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { UserProgress } from '../types';
 import { isSoundMuted, setSoundMuted, getSoundVolume, setSoundVolume, playClickSound } from '../services/sound';
+import { isTestModeEnabled } from '../services/entitlements';
 
 interface NavbarProps {
   progress: UserProgress;
@@ -105,6 +106,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Daily Brain Training
               </p>
             </div>
+            {isTestModeEnabled() && (
+              <span
+                className="hidden sm:inline-flex text-[9px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-lg"
+                style={{
+                  background: '#fff7ed',
+                  color: '#c2410c',
+                  border: '1px solid #fdba74',
+                }}
+                title="VITE_TEST_MODE unlocks Premium features locally. Set to false before production."
+              >
+                Test mode
+              </span>
+            )}
           </div>
 
           <nav

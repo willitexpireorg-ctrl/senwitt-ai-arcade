@@ -33,8 +33,9 @@ const START_WPM = 200;
 const MIN_WPM = 140;
 const MAX_WPM = 400;
 const WPM_STEP = 40;
+const PASSAGES_PER_SESSION = 4;
 
-const PASSAGES: RsvpPassage[] = [
+const PASSAGE_BANK: RsvpPassage[] = [
   {
     id: 'expense-policy',
     title: 'Expense policy update',
@@ -71,12 +72,145 @@ const PASSAGES: RsvpPassage[] = [
       explanation: '73% of employees preferred a hybrid schedule over fully remote or fully in-office.',
     },
   },
+  {
+    id: 'security-reminder',
+    title: 'Security reminder',
+    text:
+      'Starting next Monday, all employees will be required to use multi factor authentication when logging into company systems from outside the office network. IT will send setup instructions this week, and a short grace period of five business days will be given for anyone who needs help configuring their authenticator app.',
+    question: {
+      question: 'What is the length of the grace period for setting up multi-factor authentication?',
+      options: ['Two business days', 'Five business days', 'Two weeks', 'There is no grace period'],
+      correctIndex: 1,
+      explanation: 'The passage states a grace period of five business days will be given.',
+    },
+  },
+  {
+    id: 'travel-policy',
+    title: 'Updated travel policy',
+    text:
+      'The updated travel policy raises the daily meal allowance from thirty five dollars to fifty dollars for domestic trips, effective for any travel booked after the first of next month. Hotel bookings above two hundred dollars per night now require manager pre approval. All receipts must be submitted within two weeks of returning from the trip.',
+    question: {
+      question: 'What now requires manager pre-approval under the updated policy?',
+      options: ['Any meal over $35', 'Hotel bookings above $200 per night', 'All domestic flights', 'Any trip longer than 3 days'],
+      correctIndex: 1,
+      explanation: 'The passage states hotel bookings above $200 per night now require manager pre-approval.',
+    },
+  },
+  {
+    id: 'product-metrics',
+    title: 'Weekly product metrics',
+    text:
+      'Weekly active users grew four percent this week, driven mostly by the new onboarding flow shipped last Tuesday. However, seven day retention dipped slightly, which the team believes is linked to a notification bug that has since been patched. Leadership wants another week of data before drawing firm conclusions about the retention dip.',
+    question: {
+      question: 'What does the team believe caused the retention dip?',
+      options: ['The new onboarding flow', 'A notification bug that has since been patched', 'A pricing change', 'A competitor launch'],
+      correctIndex: 1,
+      explanation: 'The passage links the retention dip to a notification bug that has since been patched.',
+    },
+  },
+  {
+    id: 'benefits-open-enrollment',
+    title: 'Benefits open enrollment',
+    text:
+      'Open enrollment for health benefits runs from November first through November fifteenth this year. Employees who do not make an active selection will be automatically re-enrolled in their current plan at the new premium rates. A benefits fair with vendor representatives will be held virtually on November seventh for anyone with questions.',
+    question: {
+      question: 'What happens if an employee makes no active selection during open enrollment?',
+      options: [
+        'They lose health coverage entirely',
+        'They are automatically re-enrolled in their current plan at new rates',
+        'They are enrolled in the cheapest available plan',
+        'Enrollment is extended automatically for them',
+      ],
+      correctIndex: 1,
+      explanation: 'The passage states employees are auto re-enrolled in their current plan at the new premium rates.',
+    },
+  },
+  {
+    id: 'office-relocation',
+    title: 'Office relocation notice',
+    text:
+      'The downtown office will relocate to the new building three blocks north starting the second week of next month. Desk assignments will be sent out two weeks before the move, and IT will handle all equipment transport so employees only need to pack personal items. Parking validation at the new building requires a separate registration through the front desk.',
+    question: {
+      question: 'What do employees need to do about their equipment for the move?',
+      options: [
+        'Pack and transport it themselves',
+        'Nothing — IT will handle equipment transport',
+        'Ship it to the new address individually',
+        'Leave it behind and receive new equipment',
+      ],
+      correctIndex: 1,
+      explanation: 'The passage states IT will handle all equipment transport, so employees only pack personal items.',
+    },
+  },
+  {
+    id: 'api-deprecation',
+    title: 'API deprecation notice',
+    text:
+      'The version one API will be deprecated on the last day of this quarter, after which all requests will return an error. Customers still on version one have been emailed migration guides, and our support team is offering office hours twice a week to help with the transition. Usage on version one has already dropped by sixty percent since the notice went out.',
+    question: {
+      question: 'By how much has version one API usage dropped since the deprecation notice?',
+      options: ['Twenty percent', 'Forty percent', 'Sixty percent', 'It has not changed'],
+      correctIndex: 2,
+      explanation: 'The passage states usage on version one has already dropped by sixty percent since the notice.',
+    },
+  },
+  {
+    id: 'return-to-office',
+    title: 'Return-to-office update',
+    text:
+      'Starting next quarter, teams will move to a required three day in office schedule, with Tuesday and Thursday as fixed anchor days chosen by leadership. The third day can be chosen individually by each team. Anyone with an existing fully remote accommodation should confirm their status with HR before the change takes effect.',
+    question: {
+      question: 'Which two days are fixed anchor days under the new schedule?',
+      options: ['Monday and Wednesday', 'Tuesday and Thursday', 'Wednesday and Friday', 'The days are not fixed at all'],
+      correctIndex: 1,
+      explanation: 'The passage names Tuesday and Thursday as the fixed anchor days chosen by leadership.',
+    },
+  },
+  {
+    id: 'compliance-training',
+    title: 'Annual compliance training',
+    text:
+      'Annual compliance training is due by the end of this month, and it takes about forty five minutes to complete online. Managers will receive a list of anyone on their team who has not completed it starting next week. Employees who do not finish by the deadline will need special approval to access certain internal systems until they complete it.',
+    question: {
+      question: 'What happens to employees who miss the compliance training deadline?',
+      options: [
+        'Nothing happens at all',
+        'They need special approval to access certain internal systems',
+        'They are automatically enrolled in a longer course',
+        'Their manager is disciplined instead',
+      ],
+      correctIndex: 1,
+      explanation: 'The passage states employees who miss the deadline need special approval for certain internal systems.',
+    },
+  },
+  {
+    id: 'parking-policy',
+    title: 'Parking policy change',
+    text:
+      'Starting next month, on-site parking will require a registered badge scan at the garage gate instead of a paper permit on the dashboard. Employees who already have a permit will be migrated automatically and do not need to re-register. Visitors will still use the existing paper permit process at the front desk.',
+    question: {
+      question: 'What do employees with an existing permit need to do?',
+      options: [
+        'Re-register from scratch',
+        'Nothing — they are migrated automatically',
+        'Switch to visitor parking',
+        'Pay a new parking fee',
+      ],
+      correctIndex: 1,
+      explanation: 'The passage states existing permit holders are migrated automatically and do not need to re-register.',
+    },
+  },
 ];
+
+const pickPassages = (): RsvpPassage[] => {
+  const shuffled = [...PASSAGE_BANK].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, PASSAGES_PER_SESSION);
+};
 
 type Phase = 'ready' | 'rsvp' | 'question' | 'result';
 
 export const RsvpReaderDrill: React.FC<RsvpReaderDrillProps> = ({ onComplete, onCancel }) => {
-  const [passages] = useState<RsvpPassage[]>(PASSAGES);
+  const [passages] = useState<RsvpPassage[]>(pickPassages);
   const [passageIndex, setPassageIndex] = useState<number>(0);
   const [phase, setPhase] = useState<Phase>('ready');
   const [wpm, setWpm] = useState<number>(START_WPM);
@@ -86,6 +220,7 @@ export const RsvpReaderDrill: React.FC<RsvpReaderDrillProps> = ({ onComplete, on
   const [correctCount, setCorrectCount] = useState<number>(0);
 
   const drillStartRef = useRef<number>(Date.now());
+  const finishedRef = useRef(false);
   const currentPassage = passages[passageIndex];
   const words = currentPassage.text.split(/\s+/);
 
@@ -134,6 +269,8 @@ export const RsvpReaderDrill: React.FC<RsvpReaderDrillProps> = ({ onComplete, on
   const handleNext = () => {
     playClickSound();
     if (passageIndex + 1 >= passages.length) {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       playFanfareSound();
       onComplete({
         scoreEarned: score,

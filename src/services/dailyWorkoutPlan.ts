@@ -23,7 +23,8 @@ export type WorkoutEngineMechanic =
   | 'synonym_race'
   | 'tone_pick'
   | 'attention_track'
-  | 'route_plan';
+  | 'route_plan'
+  | 'inbox_triage';
 
 export type WorkoutStep =
   | { id: string; kind: 'quiz'; label: string; item: ExerciseItem }
@@ -53,6 +54,7 @@ export const ENGINE_LABELS: Record<WorkoutEngineMechanic, string> = {
   tone_pick: 'Tone Pick',
   attention_track: 'Focus Track',
   route_plan: 'Route Planner',
+  inbox_triage: 'Inbox Triage',
 };
 
 const ENGINE_CATEGORY: Record<WorkoutEngineMechanic, SkillCategory> = {
@@ -71,6 +73,7 @@ const ENGINE_CATEGORY: Record<WorkoutEngineMechanic, SkillCategory> = {
   tone_pick: 'writing',
   attention_track: 'reasoning',
   route_plan: 'reasoning',
+  inbox_triage: 'reasoning',
 };
 
 const ALL_ENGINES: WorkoutEngineMechanic[] = [
@@ -89,6 +92,7 @@ const ALL_ENGINES: WorkoutEngineMechanic[] = [
   'tone_pick',
   'attention_track',
   'route_plan',
+  'inbox_triage',
 ];
 
 const BASELINE_TO_SKILL: Record<BaselinePriority, SkillCategory> = {

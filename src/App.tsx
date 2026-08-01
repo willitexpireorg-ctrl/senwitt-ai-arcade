@@ -30,6 +30,7 @@ import {
   LazyTonePickDrill,
   LazyFocusTrackDrill,
   LazyRoutePlannerDrill,
+  LazyInboxTriageDrill,
   LazyDualNBackGame,
   LazySpatialMemoryGame,
   LazyStroopDrill,
@@ -68,8 +69,13 @@ import {
 } from './services/reminderScheduler';
 import { onAuthStateChange } from './services/authService';
 import { ensureProfile, pullAndMerge, pushSoon, resetSyncState, setSyncUser } from './services/syncService';
-import { subscribeWebPush, unsubscribeWebPush } from './services/webPush';
-import { refreshEntitlement, subscribeEntitlement, canAccessWeekendLong } from './services/entitlements';
+import { refreshWebPushTimezone, subscribeWebPush, unsubscribeWebPush } from './services/webPush';
+import {
+  refreshEntitlement,
+  subscribeEntitlement,
+  canAccessWeekendLong,
+  getIsPremium,
+} from './services/entitlements';
 import type { Session } from '@supabase/supabase-js';
 
 type ArcadeMode =
@@ -91,6 +97,7 @@ type ArcadeMode =
   | 'tone_pick'
   | 'attention_track'
   | 'route_plan'
+  | 'inbox_triage'
   | null;
 
 const ARCADE_SKILL: Record<string, SkillCategory> = {
@@ -113,6 +120,7 @@ const ARCADE_SKILL: Record<string, SkillCategory> = {
   tone_pick: 'writing',
   attention_track: 'reasoning',
   route_plan: 'reasoning',
+  inbox_triage: 'reasoning',
 };
 
 const recentItemIds = (history: SessionResult[], limit = 80): string[] => {
@@ -168,7 +176,7 @@ export const App: React.FC = () => {
   const [isVoiceDrillOpen, setIsVoiceDrillOpen] = useState<boolean>(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
   const [session, setSession] = useState<Session | null>(null);
-  const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [isPremium, setIsPremium] = useState<boolean>(() => getIsPremium());
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState<boolean>(false);
   const [upgradeModalFromCheckout, setUpgradeModalFromCheckout] = useState<boolean>(false);
 
@@ -246,6 +254,27 @@ export const App: React.FC = () => {
       void postReminderScheduleToSw(progress.reminderTime ?? '09:00', false);
     }
   }, [progress.reminderEnabled, progress.reminderTime]);
+
+  // Refresh stored timezone offset while reminders are on so DST / travel
+  // don't leave the cron sender using a stale offset. Cheap upsert; no-op
+  // when signed out, unsupported, or not subscribed.
+  useEffect(() => {
+    if (!session?.user.id || !progress.reminderEnabled) return;
+    const userId = session.user.id;
+    const refresh = () => {
+      void refreshWebPushTimezone(userId);
+    };
+    refresh();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    const intervalId = window.setInterval(refresh, 6 * 60 * 60 * 1000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.clearInterval(intervalId);
+    };
+  }, [session?.user.id, progress.reminderEnabled]);
 
   const excludeIds = useMemo(() => recentItemIds(sessionHistory), [sessionHistory]);
 
@@ -421,6 +450,7 @@ export const App: React.FC = () => {
       tone_pick: 'tone_pick',
       attention_track: 'attention_track',
       route_plan: 'route_plan',
+      inbox_triage: 'inbox_triage',
     };
 
     if (game.mechanicType === 'voice_drill') {
@@ -439,8 +469,10 @@ export const App: React.FC = () => {
     setActiveSessionMode('coffee_break');
   };
 
+  type CustomGameResult = { scoreEarned: number; correctCount: number; totalItems: number; totalTimeMs: number };
+
   const handleCustomGameComplete = (
-    result: { scoreEarned: number; correctCount: number; totalItems: number; totalTimeMs: number },
+    result: CustomGameResult,
     modeName: string,
   ) => {
     setActiveGameMode(null);
@@ -474,6 +506,42 @@ export const App: React.FC = () => {
     const note = arcadeIntensityNote(modeName, { spatialGridSize, nBackLevel, stroopTrialCount });
     handleCompleteSession(session, { arcadeNote: note });
   };
+
+  // Engines like DualNBackGame list `onComplete` in an effect's dependency
+  // array (to advance/finish trials). Passing a fresh inline lambda here on
+  // every App re-render would recreate that prop identity and re-run those
+  // effects mid-step, resetting timers/flags. Route through a ref so each
+  // arcade mode gets one stable callback for the component's lifetime while
+  // still always calling the latest `handleCustomGameComplete` closure.
+  const handleCustomGameCompleteRef = useRef(handleCustomGameComplete);
+  handleCustomGameCompleteRef.current = handleCustomGameComplete;
+
+  const arcadeOnComplete = useMemo(() => {
+    const wrap = (modeName: string) => (result: CustomGameResult) =>
+      handleCustomGameCompleteRef.current(result, modeName);
+    return {
+      spatial: wrap('spatial'),
+      dual_nback: wrap('dual_nback'),
+      stroop: wrap('stroop'),
+      logic_deduction: wrap('logic_deduction'),
+      brief_recall: wrap('brief_recall'),
+      clearer_sentence: wrap('clearer_sentence'),
+      number_sense: wrap('number_sense'),
+      brevity_cut: wrap('brevity_cut'),
+      quick_purchase: wrap('quick_purchase'),
+      sequence_order: wrap('sequence_order'),
+      rsvp_reader: wrap('rsvp_reader'),
+      speed_match: wrap('speed_match'),
+      signal_sweep: wrap('signal_sweep'),
+      pattern_shift: wrap('pattern_shift'),
+      synonym_race: wrap('synonym_race'),
+      tone_pick: wrap('tone_pick'),
+      attention_track: wrap('attention_track'),
+      route_plan: wrap('route_plan'),
+      inbox_triage: wrap('inbox_triage'),
+    } as const;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleVoiceComplete = (result: {
     scoreEarned: number;
@@ -544,95 +612,100 @@ export const App: React.FC = () => {
           ) : activeGameMode === 'spatial' ? (
             <LazySpatialMemoryGame
               gridSize={spatialGridSize}
-              onComplete={(s) => handleCustomGameComplete(s, 'spatial')}
+              onComplete={arcadeOnComplete.spatial}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'dual_nback' ? (
             <LazyDualNBackGame
               nLevel={nBackLevel}
-              onComplete={(s) => handleCustomGameComplete(s, 'dual_nback')}
+              onComplete={arcadeOnComplete.dual_nback}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'stroop' ? (
             <LazyStroopDrill
               trialCount={stroopTrialCount}
               feedbackMs={stroopFeedbackMs}
-              onComplete={(s) => handleCustomGameComplete(s, 'stroop')}
+              onComplete={arcadeOnComplete.stroop}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'logic_deduction' ? (
             <LazyLogicInferenceDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'logic_deduction')}
+              onComplete={arcadeOnComplete.logic_deduction}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'brief_recall' ? (
             <LazyBriefRecallDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'brief_recall')}
+              onComplete={arcadeOnComplete.brief_recall}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'clearer_sentence' ? (
             <LazyClearerSentenceDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'clearer_sentence')}
+              onComplete={arcadeOnComplete.clearer_sentence}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'number_sense' ? (
             <LazyNumberSenseDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'number_sense')}
+              onComplete={arcadeOnComplete.number_sense}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'brevity_cut' ? (
             <LazyBrevityCutDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'brevity_cut')}
+              onComplete={arcadeOnComplete.brevity_cut}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'quick_purchase' ? (
             <LazyQuickPurchaseDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'quick_purchase')}
+              onComplete={arcadeOnComplete.quick_purchase}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'sequence_order' ? (
             <LazySequenceOrderDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'sequence_order')}
+              onComplete={arcadeOnComplete.sequence_order}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'rsvp_reader' ? (
             <LazyRsvpReaderDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'rsvp_reader')}
+              onComplete={arcadeOnComplete.rsvp_reader}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'speed_match' ? (
             <LazySpeedMatchDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'speed_match')}
+              onComplete={arcadeOnComplete.speed_match}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'signal_sweep' ? (
             <LazySignalSweepDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'signal_sweep')}
+              onComplete={arcadeOnComplete.signal_sweep}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'pattern_shift' ? (
             <LazyPatternShiftDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'pattern_shift')}
+              onComplete={arcadeOnComplete.pattern_shift}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'synonym_race' ? (
             <LazySynonymRaceDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'synonym_race')}
+              onComplete={arcadeOnComplete.synonym_race}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'tone_pick' ? (
             <LazyTonePickDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'tone_pick')}
+              onComplete={arcadeOnComplete.tone_pick}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'attention_track' ? (
             <LazyFocusTrackDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'attention_track')}
+              onComplete={arcadeOnComplete.attention_track}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'route_plan' ? (
             <LazyRoutePlannerDrill
-              onComplete={(s) => handleCustomGameComplete(s, 'route_plan')}
+              onComplete={arcadeOnComplete.route_plan}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'inbox_triage' ? (
+            <LazyInboxTriageDrill
+              onComplete={arcadeOnComplete.inbox_triage}
               onCancel={handleCancelSession}
             />
           ) : workoutRunning && runningWorkout ? (

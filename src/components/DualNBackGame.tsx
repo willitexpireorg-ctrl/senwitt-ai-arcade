@@ -32,6 +32,15 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
 
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
+  const scoreRef = useRef<number>(0);
+  scoreRef.current = score;
+  const activeRef = useRef<boolean>(true);
+  useEffect(() => {
+    activeRef.current = true;
+    return () => {
+      activeRef.current = false;
+    };
+  }, []);
 
   // Generate trial sequence
   const initGame = React.useCallback((n: number) => {
@@ -93,7 +102,10 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
     }
   }, [currentStep, isPlaying, letters]);
 
-  // Step loop
+  // Step loop. `score` is intentionally NOT a dependency here (read via
+  // scoreRef instead) — including it re-ran this effect on every scored tap,
+  // which reset the match flags mid-trial and let a player spam a match
+  // button for repeated points before the round advanced.
   useEffect(() => {
     if (!isPlaying || positions.length === 0) return;
 
@@ -101,9 +113,10 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
       setIsPlaying(false);
       setGameFinished(true);
       playFanfareSound();
-      const finalScore = score + (nLevel * 40);
+      const finalScore = scoreRef.current + (nLevel * 40);
       const correctCount = Math.max(0, Math.min(trialCount, Math.round(finalScore / 25)));
       setTimeout(() => {
+        if (!activeRef.current) return;
         onComplete({
           scoreEarned: finalScore,
           correctCount,
@@ -125,7 +138,8 @@ export const DualNBackGame: React.FC<DualNBackGameProps> = ({ onComplete, onCanc
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [currentStep, isPlaying, positions.length, trialCount, score, nLevel, onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, isPlaying, positions.length, trialCount, nLevel, onComplete]);
 
   // Keyboard shortcut listeners (P for position, L for letter)
   useEffect(() => {

@@ -29,7 +29,8 @@ export interface GameSpec {
     | 'synonym_race'
     | 'tone_pick'
     | 'attention_track'
-    | 'route_plan';
+    | 'route_plan'
+    | 'inbox_triage';
 }
 
 // A small, curated set of mini-games that actually work: four live interactive
@@ -245,6 +246,17 @@ export class ResearchAgent {
         difficultyRange: 'Tier 1-5',
         estimatedDuration: '2 Mins',
         mechanicType: 'route_plan',
+      },
+      {
+        id: 'game-inbox-triage',
+        title: 'Inbox Triage',
+        category: 'reasoning',
+        description: 'Read a short email and decide fast: reply now, schedule for later, delegate, or archive.',
+        scientificRationale: 'Practices triage judgment — weighing urgency and ownership to decide what deserves attention right now.',
+        neuralTarget: 'Prioritization Judgment',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'inbox_triage',
       },
       {
         id: 'game-writing-quiz',

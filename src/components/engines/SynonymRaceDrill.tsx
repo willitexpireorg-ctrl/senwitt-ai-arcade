@@ -111,6 +111,34 @@ const BANK: SynonymRound[] = [
     correctIndex: 1,
     explanation: 'Collaborate and cooperate both mean working together.',
   },
+  {
+    id: 'syn-13',
+    prompt: 'redundant',
+    options: ['essential', 'unnecessary', 'urgent', 'creative'],
+    correctIndex: 1,
+    explanation: 'Redundant and unnecessary both describe something not needed.',
+  },
+  {
+    id: 'syn-14',
+    prompt: 'feasible',
+    options: ['impossible', 'workable', 'expensive', 'delayed'],
+    correctIndex: 1,
+    explanation: 'Feasible and workable both mean able to be done in practice.',
+  },
+  {
+    id: 'syn-15',
+    prompt: 'candid',
+    options: ['evasive', 'frank', 'formal', 'quiet'],
+    correctIndex: 1,
+    explanation: 'Candid and frank both mean openly honest.',
+  },
+  {
+    id: 'syn-16',
+    prompt: 'meticulous',
+    options: ['careless', 'thorough', 'quick', 'casual'],
+    correctIndex: 1,
+    explanation: 'Meticulous and thorough both mean careful and detail-oriented.',
+  },
 ];
 
 const pickRounds = (): SynonymRound[] => {

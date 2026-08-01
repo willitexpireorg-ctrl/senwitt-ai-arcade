@@ -4,7 +4,7 @@ import {
   Scale, Mic, PenLine, Calculator, Code2, BookSearch, Brain,
   FileText, MessageSquareText, Percent, Scissors, ShoppingCart, ListOrdered, Zap,
   GitCompare, ScanSearch, Shuffle, Sparkles, BookA, MessageCircle,
-  TrainFront, Waypoints, Lock,
+  TrainFront, Waypoints, Lock, Inbox,
   type LucideIcon,
 } from 'lucide-react';
 import { ResearchAgent } from '../services/researchAgent';
@@ -207,6 +207,11 @@ const GAME_VISUALS: Record<string, { icon: LucideIcon; artClass: string; label: 
     artClass: 'tile-art--mint',
     label: 'Route Planner waypoints icon',
   },
+  'game-inbox-triage': {
+    icon: Inbox,
+    artClass: 'tile-art--mint',
+    label: 'Inbox Triage icon',
+  },
   'game-writing-quiz': {
     icon: PenLine,
     artClass: 'tile-art--sky',
@@ -246,7 +251,7 @@ const LIVE_MECHANIC_TYPES = new Set([
   'brevity_cut', 'quick_purchase', 'sequence_order', 'rsvp_reader',
   'speed_match', 'signal_sweep', 'pattern_shift',
   'synonym_race', 'tone_pick',
-  'attention_track', 'route_plan',
+  'attention_track', 'route_plan', 'inbox_triage',
 ]);
 
 const CATEGORIES = [

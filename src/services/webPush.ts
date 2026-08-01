@@ -124,3 +124,38 @@ export const getExistingWebPushSubscription = async (): Promise<PushSubscription
     return null;
   }
 };
+
+/** Active SW registration without blocking on `serviceWorker.ready` (safe for polling). */
+const getActiveRegistrationIfReady = async (): Promise<ServiceWorkerRegistration | null> => {
+  if (!isWebPushSupported()) return null;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return registration?.active ? registration : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Re-upserts the active push subscription with a fresh
+ * `timezone_offset_minutes` so DST / travel shifts don't leave cron firing
+ * at the wrong local wall-clock time. Graceful no-op when unsupported,
+ * unconfigured, signed out, or not subscribed.
+ */
+export const refreshWebPushTimezone = async (
+  userId: string | null | undefined,
+): Promise<void> => {
+  if (!userId) return;
+  if (!isSupabaseConfigured() || !supabase) return;
+  if (!isWebPushConfigured()) return;
+  if (!isWebPushSupported()) return;
+  try {
+    const registration = await getActiveRegistrationIfReady();
+    if (!registration) return;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return;
+    await saveSubscriptionToSupabase(userId, subscription);
+  } catch (e) {
+    console.warn('refreshWebPushTimezone failed', e);
+  }
+};

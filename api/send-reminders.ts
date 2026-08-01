@@ -9,6 +9,10 @@ const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:contact@senwitt.app';
 
 // Cron fires every 15 minutes (see vercel.json) — this is the send window.
 const REMINDER_WINDOW_MINUTES = 15;
+/** Supabase/PostgREST default max rows per request — page past this. */
+const PAGE_SIZE = 1000;
+/** Chunk size for `.in('user_id', …)` lookups (URL / payload safety). */
+const USER_ID_IN_CHUNK = 200;
 
 interface PushSubscriptionRow {
   id: string;
@@ -80,6 +84,51 @@ const isWithinReminderWindow = (
   return diff >= 0 && diff < windowMinutes;
 };
 
+type AdminClient = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
+
+/** Load every push subscription row, paging past Supabase's 1000-row default. */
+const fetchAllPushSubscriptions = async (admin: AdminClient): Promise<PushSubscriptionRow[]> => {
+  const rows: PushSubscriptionRow[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await admin
+      .from('push_subscriptions')
+      .select('id, user_id, endpoint, p256dh, auth, timezone_offset_minutes, last_notified_date')
+      .order('id', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    const batch = (data ?? []) as PushSubscriptionRow[];
+    rows.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return rows;
+};
+
+/** Load reminder prefs for many users, chunking `.in()` to avoid oversized filters. */
+const fetchProgressByUserIds = async (
+  admin: AdminClient,
+  userIds: string[],
+): Promise<Map<string, ProgressLike>> => {
+  const progressByUserId = new Map<string, ProgressLike>();
+  for (let i = 0; i < userIds.length; i += USER_ID_IN_CHUNK) {
+    const chunk = userIds.slice(i, i + USER_ID_IN_CHUNK);
+    const { data, error } = await admin.from('user_data').select('user_id, payload').in('user_id', chunk);
+    if (error) {
+      throw error;
+    }
+    for (const row of data ?? []) {
+      const payload = row.payload as { progress?: ProgressLike } | null;
+      if (payload?.progress) progressByUserId.set(row.user_id, payload.progress);
+    }
+  }
+  return progressByUserId;
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST');
@@ -109,35 +158,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let errors = 0;
 
   try {
-    const { data: subscriptions, error: subsError } = await admin
-      .from('push_subscriptions')
-      .select('id, user_id, endpoint, p256dh, auth, timezone_offset_minutes, last_notified_date');
-
-    if (subsError) {
+    let rows: PushSubscriptionRow[];
+    try {
+      rows = await fetchAllPushSubscriptions(admin);
+    } catch (subsError) {
       console.error('send-reminders: failed to load push_subscriptions', subsError);
       return res.status(500).json({ error: 'Failed to load subscriptions' });
     }
 
-    const rows = (subscriptions ?? []) as PushSubscriptionRow[];
     if (rows.length === 0) {
       return res.status(200).json({ sent, skipped, errors });
     }
 
     const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
-    const { data: userDataRows, error: userDataError } = await admin
-      .from('user_data')
-      .select('user_id, payload')
-      .in('user_id', userIds);
-
-    if (userDataError) {
+    let progressByUserId: Map<string, ProgressLike>;
+    try {
+      progressByUserId = await fetchProgressByUserIds(admin, userIds);
+    } catch (userDataError) {
       console.error('send-reminders: failed to load user_data', userDataError);
       return res.status(500).json({ error: 'Failed to load user preferences' });
-    }
-
-    const progressByUserId = new Map<string, ProgressLike>();
-    for (const row of userDataRows ?? []) {
-      const payload = row.payload as { progress?: ProgressLike } | null;
-      if (payload?.progress) progressByUserId.set(row.user_id, payload.progress);
     }
 
     const now = new Date();

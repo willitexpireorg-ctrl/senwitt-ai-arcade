@@ -29,6 +29,14 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
 
   const startTimeRef = useRef<number>(Date.now());
   const timersRef = useRef<Array<number>>([]);
+  const activeRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    activeRef.current = true;
+    return () => {
+      activeRef.current = false;
+    };
+  }, []);
 
   const addTimeout = (fn: () => void, ms: number) => {
     const id = window.setTimeout(fn, ms);
@@ -100,6 +108,7 @@ export const SpatialMemoryGame: React.FC<SpatialMemoryGameProps> = ({ onComplete
   };
 
   const finish = (scoreEarned: number, correctCount: number) => {
+    if (!activeRef.current) return;
     onComplete({
       scoreEarned,
       correctCount,

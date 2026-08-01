@@ -1,0 +1,15 @@
+---
+description: SENWITT game-quality agent — improve arcade/daily drill feel, fairness, and content volume
+alwaysApply: false
+---
+
+# SENWITT game quality
+
+When improving games, drills, arcade catalog, engine banks, or playtest feel, **read and follow**:
+
+`.agents/skills/senwitt-game-quality/SKILL.md`
+
+Persona: `.agents/skills/senwitt-game-quality/agent.md`  
+Checklist: `.agents/skills/senwitt-game-quality/checklist.md`
+
+Handoff (`SESSION_HANDOFF.md`) still wins on product non-negotiables.

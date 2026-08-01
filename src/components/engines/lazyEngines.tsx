@@ -114,6 +114,9 @@ export const LazyFocusTrackDrill = withSuspense(
 export const LazyRoutePlannerDrill = withSuspense(
   lazy(() => import('./RoutePlannerDrill').then((m) => ({ default: m.RoutePlannerDrill }))),
 );
+export const LazyInboxTriageDrill = withSuspense(
+  lazy(() => import('./InboxTriageDrill').then((m) => ({ default: m.InboxTriageDrill }))),
+);
 
 export const LazyDualNBackGame = withSuspense(
   lazy(() => import('../DualNBackGame').then((m) => ({ default: m.DualNBackGame }))),

@@ -24,8 +24,9 @@ interface StepScenario {
 const PREVIEW_SECONDS = 10;
 const POINTS_PER_STEP = 8;
 const PERFECT_BONUS = 20;
+const SCENARIOS_PER_SESSION = 4;
 
-const SCENARIOS: StepScenario[] = [
+const SCENARIO_BANK: StepScenario[] = [
   {
     id: 'meeting-prep',
     title: 'Getting ready for a client meeting',
@@ -59,7 +60,111 @@ const SCENARIOS: StepScenario[] = [
       'Deploy to production and monitor',
     ],
   },
+  {
+    id: 'new-hire-onboarding',
+    title: 'Onboarding a new hire',
+    steps: [
+      'Send the offer letter and welcome packet',
+      'Provision laptop and account access',
+      'Schedule first-week orientation sessions',
+      'Assign an onboarding buddy',
+      'Check in after 30 days',
+    ],
+  },
+  {
+    id: 'invoice-processing',
+    title: 'Processing a vendor invoice',
+    steps: [
+      'Receive the invoice from the vendor',
+      'Match it against the purchase order',
+      'Get manager approval for payment',
+      'Submit the invoice to accounts payable',
+      'Confirm payment was issued',
+    ],
+  },
+  {
+    id: 'product-launch',
+    title: 'Launching a new feature',
+    steps: [
+      'Finalize the feature spec with stakeholders',
+      'Build and QA the feature internally',
+      'Ship to a small beta group',
+      'Collect feedback and fix issues',
+      'Roll out to all users',
+    ],
+  },
+  {
+    id: 'incident-response',
+    title: 'Responding to a production incident',
+    steps: [
+      'Detect the alert and acknowledge it',
+      'Assess impact and declare severity',
+      'Apply a mitigation or rollback',
+      'Confirm the system has recovered',
+      'Write and share the postmortem',
+    ],
+  },
+  {
+    id: 'performance-review',
+    title: 'Running a performance review cycle',
+    steps: [
+      'Set goals at the start of the cycle',
+      'Collect peer feedback',
+      'Write the self-assessment',
+      'Hold the 1:1 review conversation',
+      'Document final ratings and next goals',
+    ],
+  },
+  {
+    id: 'budget-approval',
+    title: 'Getting a budget request approved',
+    steps: [
+      'Draft the budget proposal with cost breakdown',
+      'Get sign-off from your direct manager',
+      'Submit to finance for review',
+      'Present to the budget committee if needed',
+      'Receive final approval and allocate funds',
+    ],
+  },
+  {
+    id: 'customer-escalation',
+    title: 'Handling a customer escalation',
+    steps: [
+      'Acknowledge the customer\u2019s complaint',
+      'Investigate the root cause internally',
+      'Propose a resolution to the customer',
+      'Implement the fix or refund',
+      'Follow up to confirm satisfaction',
+    ],
+  },
+  {
+    id: 'contract-signing',
+    title: 'Closing a new client contract',
+    steps: [
+      'Send the proposal and pricing',
+      'Negotiate final terms',
+      'Route the contract for legal review',
+      'Collect signatures from both parties',
+      'Kick off onboarding for the client',
+    ],
+  },
+  {
+    id: 'password-reset',
+    title: 'Resetting a locked company account',
+    steps: [
+      'Verify your identity with IT support',
+      'Request a password reset link',
+      'Set a new password meeting policy rules',
+      'Re-enable multi-factor authentication',
+      'Confirm you can log in successfully',
+    ],
+  },
 ];
+
+const pickScenarios = (): StepScenario[] => {
+  const shuffled = [...SCENARIO_BANK].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, SCENARIOS_PER_SESSION);
+};
 
 type Phase = 'preview' | 'order' | 'result';
 
@@ -77,17 +182,18 @@ const shuffledDifferentFrom = <T,>(arr: T[]): T[] => {
 };
 
 export const SequenceOrderDrill: React.FC<SequenceOrderDrillProps> = ({ onComplete, onCancel }) => {
-  const [scenarios] = useState<StepScenario[]>(SCENARIOS);
+  const [scenarios] = useState<StepScenario[]>(pickScenarios);
   const [scenarioIndex, setScenarioIndex] = useState<number>(0);
   const [phase, setPhase] = useState<Phase>('preview');
   const [secondsLeft, setSecondsLeft] = useState<number>(PREVIEW_SECONDS);
-  const [scrambled, setScrambled] = useState<string[]>(() => shuffledDifferentFrom(SCENARIOS[0].steps));
+  const [scrambled, setScrambled] = useState<string[]>(() => shuffledDifferentFrom(scenarios[0].steps));
   const [userOrder, setUserOrder] = useState<string[]>([]);
   const [score, setScore] = useState<number>(0);
   const [correctPositionsTotal, setCorrectPositionsTotal] = useState<number>(0);
   const [roundCorrectPositions, setRoundCorrectPositions] = useState<number>(0);
 
   const drillStartRef = useRef<number>(Date.now());
+  const finishedRef = useRef(false);
   const currentScenario = scenarios[scenarioIndex];
   const totalSteps = scenarios.reduce((sum, s) => sum + s.steps.length, 0);
 
@@ -146,6 +252,8 @@ export const SequenceOrderDrill: React.FC<SequenceOrderDrillProps> = ({ onComple
   const handleNextScenario = () => {
     playClickSound();
     if (scenarioIndex + 1 >= scenarios.length) {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       playFanfareSound();
       onComplete({
         scoreEarned: score,

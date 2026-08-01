@@ -42,6 +42,14 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel, 
 
   const startTimeRef = useRef<number>(Date.now());
   const drillStartRef = useRef<number>(Date.now());
+  const activeRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    activeRef.current = true;
+    return () => {
+      activeRef.current = false;
+    };
+  }, []);
 
   const generateTrials = (count: number): StroopTrial[] => {
     const list: StroopTrial[] = [];
@@ -95,7 +103,11 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel, 
   }, [isFinished, feedback, currentIndex, trials]);
 
   const handleAnswer = (selectedColorName: string) => {
-    if (isFinished || trials.length === 0) return;
+    // `feedback !== null` guards the brief post-answer window before the
+    // trial auto-advances — without it, rapid clicks on the answer buttons
+    // (unlike the keyboarded path, which already checked this) could score
+    // the same trial multiple times or double-fire onComplete on the last one.
+    if (isFinished || trials.length === 0 || feedback !== null) return;
     playClickSound();
 
     const reactionTime = Date.now() - startTimeRef.current;
@@ -127,6 +139,7 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel, 
         setIsFinished(true);
         playFanfareSound();
         setTimeout(() => {
+          if (!activeRef.current) return;
           onComplete({
             scoreEarned: nextScore,
             correctCount: nextCorrectCount,
@@ -233,8 +246,9 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel, 
           {COLOR_OPTIONS.map((opt, idx) => (
             <button
               key={opt.name}
+              disabled={isFinished || feedback !== null}
               onClick={() => handleAnswer(opt.name)}
-              className="btn-3d py-3.5 px-3 text-xs flex items-center justify-between"
+              className="btn-3d py-3.5 px-3 text-xs flex items-center justify-between disabled:opacity-60"
               style={{ background: '#fff', color: 'var(--text-primary)', borderBottom: '4px solid #d7e0ea' }}
             >
               <div className="flex items-center gap-2">

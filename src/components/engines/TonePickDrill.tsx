@@ -26,6 +26,8 @@ interface ToneItem {
   explanation: string;
 }
 
+const ITEMS_PER_SESSION = 6;
+
 const ITEMS: ToneItem[] = [
   {
     id: 'tone-1',
@@ -137,9 +139,169 @@ const ITEMS: ToneItem[] = [
     explanation:
       'Warm fits recognition: specific praise locks in the habit. Cold professional or bare Direct skips the reinforcement the goal needs.',
   },
+  {
+    id: 'tone-6',
+    situation: 'A client is asking for a scope change that would blow the budget.',
+    goal: 'Push back clearly without sounding difficult to work with.',
+    bestTone: 'Professional',
+    options: [
+      {
+        tone: 'Direct',
+        text: 'That\u2019s out of scope. It\u2019ll cost extra and we\u2019re not doing it for free.',
+      },
+      {
+        tone: 'Warm',
+        text: 'Ooh, tricky one! We\u2019d love to help however we can — let\u2019s figure something out!',
+      },
+      {
+        tone: 'Professional',
+        text: 'That request falls outside the current scope. We can quote it as a change order, or revisit in the next phase.',
+      },
+    ],
+    explanation:
+      'Professional names the boundary and offers two concrete paths forward — Direct risks sounding curt with a client; Warm dodges the actual issue.',
+  },
+  {
+    id: 'tone-7',
+    situation: 'You need to tell a peer their code review comments were too harsh on a junior dev.',
+    goal: 'Address the impact without putting them on the defensive.',
+    bestTone: 'Warm',
+    options: [
+      {
+        tone: 'Professional',
+        text: 'Please moderate the tone of code review comments per team guidelines going forward.',
+      },
+      {
+        tone: 'Warm',
+        text: 'Hey, I noticed some of your review comments landed a bit harsh — I know that\u2019s not the intent. Want to grab 5 minutes to compare notes on framing feedback?',
+      },
+      {
+        tone: 'Direct',
+        text: 'Your review comments were too harsh. Tone it down.',
+      },
+    ],
+    explanation:
+      'Warm names the impact, assumes good intent, and offers a collaborative next step — key for peer feedback that could otherwise feel like an attack.',
+  },
+  {
+    id: 'tone-8',
+    situation: 'A recurring meeting has no clear purpose and is eating into focus time.',
+    goal: 'Propose cancelling it without sounding like you\u2019re blaming the organizer.',
+    bestTone: 'Professional',
+    options: [
+      {
+        tone: 'Direct',
+        text: 'This meeting is pointless. Let\u2019s cancel it.',
+      },
+      {
+        tone: 'Professional',
+        text: 'Now that the project\u2019s wrapped, should we retire this recurring sync or repurpose it for something specific?',
+      },
+      {
+        tone: 'Warm',
+        text: 'No pressure at all, but just wondering out loud if maybe this meeting could possibly not happen sometime?',
+      },
+    ],
+    explanation:
+      'Professional frames it as a neutral process question (retire or repurpose) rather than a personal jab or a vague, hard-to-act-on hint.',
+  },
+  {
+    id: 'tone-9',
+    situation: 'A customer is furious about a billing error that charged them twice.',
+    goal: 'De-escalate and show you\u2019re taking ownership.',
+    bestTone: 'Warm',
+    options: [
+      {
+        tone: 'Professional',
+        text: 'We acknowledge the duplicate charge. A refund will be processed per standard procedure within 5-7 business days.',
+      },
+      {
+        tone: 'Warm',
+        text: 'I\u2019m really sorry about the duplicate charge — that\u2019s on us. I\u2019ve already started your refund and it\u2019ll land in 2-3 days; I\u2019ll email you the confirmation now.',
+      },
+      {
+        tone: 'Direct',
+        text: 'We see the duplicate charge. Refund is being issued.',
+      },
+    ],
+    explanation:
+      'Warm apologizes, owns the mistake, and gives a specific fast timeline — de-escalation needs empathy, not just procedural facts.',
+  },
+  {
+    id: 'tone-10',
+    situation: 'Finance needs your team\u2019s expense report corrected before the books close today.',
+    goal: 'Make an urgent, unambiguous ask.',
+    bestTone: 'Direct',
+    options: [
+      {
+        tone: 'Warm',
+        text: 'So sorry to add to your plate — whenever you get a sec, the expense report might need a tiny look!',
+      },
+      {
+        tone: 'Professional',
+        text: 'Kindly review the expense report at your convenience; the books are closing in the near future.',
+      },
+      {
+        tone: 'Direct',
+        text: 'The expense report has 2 errors. Please fix and resend by 3pm today — books close at 5pm.',
+      },
+    ],
+    explanation:
+      'Direct states the exact problem, deadline, and consequence — this is a same-day, no-ambiguity situation where hedging costs time.',
+  },
+  {
+    id: 'tone-11',
+    situation: 'You\u2019re asking a busy exec to sponsor your project at the next steering committee.',
+    goal: 'Make a confident, respectful ask for their time.',
+    bestTone: 'Professional',
+    options: [
+      {
+        tone: 'Direct',
+        text: 'I need you to sponsor this at steering committee. Let me know.',
+      },
+      {
+        tone: 'Professional',
+        text: 'Could you sponsor this initiative at the next steering committee? I can send a one-page brief ahead of time.',
+      },
+      {
+        tone: 'Warm',
+        text: 'I know you\u2019re swamped, but it would mean the world if you could maybe think about possibly sponsoring this sometime!',
+      },
+    ],
+    explanation:
+      'Professional is confident and specific (the ask, the offer to prep a brief) without being either curt or overly deferential.',
+  },
+  {
+    id: 'tone-12',
+    situation: 'A new hire\u2019s first PR has several style issues but good logic.',
+    goal: 'Correct the style issues while encouraging them to keep contributing.',
+    bestTone: 'Warm',
+    options: [
+      {
+        tone: 'Direct',
+        text: 'Fix the formatting issues and follow the style guide next time.',
+      },
+      {
+        tone: 'Warm',
+        text: 'Solid logic on this one! A few style-guide tweaks noted inline — very normal for a first PR, nice work getting it up.',
+      },
+      {
+        tone: 'Professional',
+        text: 'Please review the inline style comments and update per team conventions before merge.',
+      },
+    ],
+    explanation:
+      'Warm leads with genuine praise for what worked before the correction — this builds confidence in someone still finding their footing.',
+  },
 ];
 
+const pickItems = (): ToneItem[] => {
+  const shuffled = [...ITEMS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, ITEMS_PER_SESSION);
+};
+
 export const TonePickDrill: React.FC<TonePickDrillProps> = ({ onComplete, onCancel }) => {
+  const [items] = useState<ToneItem[]>(pickItems);
   const [index, setIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -152,7 +314,7 @@ export const TonePickDrill: React.FC<TonePickDrillProps> = ({ onComplete, onCanc
   scoreRef.current = score;
   correctRef.current = correctCount;
 
-  const current = ITEMS[index];
+  const current = items[index];
   const correctIndex = current.options.findIndex((o) => o.tone === current.bestTone);
 
   const handleSelect = (idx: number) => {
@@ -180,14 +342,14 @@ export const TonePickDrill: React.FC<TonePickDrillProps> = ({ onComplete, onCanc
 
   const handleNext = () => {
     playClickSound();
-    if (index + 1 >= ITEMS.length) {
+    if (index + 1 >= items.length) {
       if (finishedRef.current) return;
       finishedRef.current = true;
       playFanfareSound();
       onComplete({
         scoreEarned: scoreRef.current,
         correctCount: correctRef.current,
-        totalItems: ITEMS.length,
+        totalItems: items.length,
         totalTimeMs: Date.now() - drillStartRef.current,
       });
       return;
@@ -214,7 +376,7 @@ export const TonePickDrill: React.FC<TonePickDrillProps> = ({ onComplete, onCanc
             className="text-xs font-extrabold px-3.5 py-2 rounded-2xl"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
           >
-            {index + 1} of {ITEMS.length}
+            {index + 1} of {items.length}
           </div>
           <div
             className="flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-2 rounded-2xl"
@@ -324,7 +486,7 @@ export const TonePickDrill: React.FC<TonePickDrillProps> = ({ onComplete, onCanc
             onClick={handleNext}
             className="btn-3d btn-3d-teal w-full py-4 text-base flex items-center justify-center gap-2"
           >
-            <span>{index + 1 < ITEMS.length ? 'Next message' : 'Finish drill'}</span>
+            <span>{index + 1 < items.length ? 'Next message' : 'Finish drill'}</span>
             <ArrowRight className="w-5 h-5" />
           </button>
         )}

@@ -1,0 +1,25 @@
+---
+description: SENWITT master handoff — read SESSION_HANDOFF.md first for history, architecture, pitfalls, and backlog
+alwaysApply: true
+---
+
+# SENWITT — start here
+
+Before implementing or reviewing, **read** [`SESSION_HANDOFF.md`](SESSION_HANDOFF.md) at the app git root:
+
+`/Users/faithinpurple/Downloads/APPDEV/Brain Learning/app/SESSION_HANDOFF.md`
+
+That file is the canonical project memory: product decisions, phase history, architecture, env vars, remaining work, and hard-won pitfalls.
+
+## Non-negotiables (short)
+
+- Product name stays **SENWITT** (rename deferred).
+- Git root is `app/`, not the parent folder. Commit/push only when the user asks.
+- App must work **local-only** with zero cloud env vars.
+- No IQ / brain-age / clinical claims; no fake AI-agent theater.
+- Do not revive deleted hype modules (procedural “1500 variations,” Three.js bg, Agent Studio, `uiPsychologyAgents`).
+- Bright Focus UI (teal/coral). Prefer orchestrator → implementer → reviewer for large features.
+- Freemium: free daily plan stays useful. `VITE_TEST_MODE=true` unlocks Premium client gates for playtesting — turn off before production.
+- Before charging: apply `supabase/migrations/002_lock_premium_columns.sql`.
+
+When the handoff and this rule disagree with older notes in `.agents/AGENTS.md`, **prefer SESSION_HANDOFF.md**.

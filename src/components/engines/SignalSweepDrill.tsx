@@ -52,6 +52,7 @@ interface SweepRound {
 const POINTS_HIT = 14;
 const PENALTY_DISTRACTOR = 8;
 const ROUND_SECONDS = [15, 14, 13, 12, 12];
+const ROUNDS_PER_SESSION = 5;
 
 const HUE_HEX: Record<Hue, string> = {
   teal: '#0f766e',
@@ -119,113 +120,55 @@ const buildRound = (
   return { id, instruction, cols, rows, seconds, items: shuffle(items) };
 };
 
-const buildRounds = (): SweepRound[] => [
-  buildRound(
-    'sweep-1',
-    'Tap every filled teal diamond.',
-    4,
-    4,
-    ROUND_SECONDS[0],
-    4,
-    () => ({ shape: 'diamond', fill: 'filled', hue: 'teal' }),
-    () => {
-      const shapes: ShapeId[] = ['circle', 'square', 'triangle', 'star', 'diamond'];
-      const fills: FillMode[] = ['filled', 'outline'];
-      const hues: Hue[] = ['teal', 'rose', 'amber', 'sky'];
-      let shape = shapes[Math.floor(Math.random() * shapes.length)];
-      let fill = fills[Math.floor(Math.random() * fills.length)];
-      let hue = hues[Math.floor(Math.random() * hues.length)];
-      if (shape === 'diamond' && fill === 'filled' && hue === 'teal') {
-        fill = 'outline';
-      }
-      return { shape, fill, hue };
-    },
-  ),
-  buildRound(
-    'sweep-2',
-    'Tap every outline rose circle.',
-    4,
-    4,
-    ROUND_SECONDS[1],
-    5,
-    () => ({ shape: 'circle', fill: 'outline', hue: 'rose' }),
-    () => {
-      const shapes: ShapeId[] = ['circle', 'square', 'diamond', 'triangle', 'hexagon'];
-      const fills: FillMode[] = ['filled', 'outline'];
-      const hues: Hue[] = ['teal', 'rose', 'amber', 'sky'];
-      let shape = shapes[Math.floor(Math.random() * shapes.length)];
-      let fill = fills[Math.floor(Math.random() * fills.length)];
-      let hue = hues[Math.floor(Math.random() * hues.length)];
-      if (shape === 'circle' && fill === 'outline' && hue === 'rose') {
-        hue = 'teal';
-      }
-      return { shape, fill, hue };
-    },
-  ),
-  buildRound(
-    'sweep-3',
-    'Tap every filled amber star.',
-    5,
-    4,
-    ROUND_SECONDS[2],
-    5,
-    () => ({ shape: 'star', fill: 'filled', hue: 'amber' }),
-    () => {
-      const shapes: ShapeId[] = ['circle', 'square', 'diamond', 'triangle', 'star', 'hexagon'];
-      const fills: FillMode[] = ['filled', 'outline'];
-      const hues: Hue[] = ['teal', 'rose', 'amber', 'sky'];
-      let shape = shapes[Math.floor(Math.random() * shapes.length)];
-      let fill = fills[Math.floor(Math.random() * fills.length)];
-      let hue = hues[Math.floor(Math.random() * hues.length)];
-      if (shape === 'star' && fill === 'filled' && hue === 'amber') {
-        fill = 'outline';
-      }
-      return { shape, fill, hue };
-    },
-  ),
-  buildRound(
-    'sweep-4',
-    'Tap every outline sky hexagon.',
-    5,
-    4,
-    ROUND_SECONDS[3],
-    6,
-    () => ({ shape: 'hexagon', fill: 'outline', hue: 'sky' }),
-    () => {
-      const shapes: ShapeId[] = ['circle', 'square', 'diamond', 'triangle', 'star', 'hexagon'];
-      const fills: FillMode[] = ['filled', 'outline'];
-      const hues: Hue[] = ['teal', 'rose', 'amber', 'sky'];
-      let shape = shapes[Math.floor(Math.random() * shapes.length)];
-      let fill = fills[Math.floor(Math.random() * fills.length)];
-      let hue = hues[Math.floor(Math.random() * hues.length)];
-      if (shape === 'hexagon' && fill === 'outline' && hue === 'sky') {
-        hue = 'rose';
-      }
-      return { shape, fill, hue };
-    },
-  ),
-  buildRound(
-    'sweep-5',
-    'Tap every filled rose triangle.',
-    5,
-    4,
-    ROUND_SECONDS[4],
-    6,
-    () => ({ shape: 'triangle', fill: 'filled', hue: 'rose' }),
-    () => {
-      const shapes: ShapeId[] = ['circle', 'square', 'diamond', 'triangle', 'star', 'hexagon'];
-      const fills: FillMode[] = ['filled', 'outline'];
-      const hues: Hue[] = ['teal', 'rose', 'amber', 'sky'];
-      let shape = shapes[Math.floor(Math.random() * shapes.length)];
-      let fill = fills[Math.floor(Math.random() * fills.length)];
-      let hue = hues[Math.floor(Math.random() * hues.length)];
-      if (shape === 'triangle' && fill === 'filled' && hue === 'rose') {
-        shape = 'square';
-      }
-      return { shape, fill, hue };
-    },
-  ),
+const ALL_SHAPES: ShapeId[] = ['circle', 'square', 'diamond', 'triangle', 'star', 'hexagon'];
+const ALL_FILLS: FillMode[] = ['filled', 'outline'];
+const ALL_HUES: Hue[] = ['teal', 'rose', 'amber', 'sky'];
+
+interface RoundRecipe {
+  id: string;
+  instruction: string;
+  cols: number;
+  rows: number;
+  targetCount: number;
+  target: Omit<CellItem, 'id' | 'isTarget'>;
+}
+
+const ROUND_RECIPES: RoundRecipe[] = [
+  { id: 'sweep-1', instruction: 'Tap every filled teal diamond.', cols: 4, rows: 4, targetCount: 4, target: { shape: 'diamond', fill: 'filled', hue: 'teal' } },
+  { id: 'sweep-2', instruction: 'Tap every outline rose circle.', cols: 4, rows: 4, targetCount: 5, target: { shape: 'circle', fill: 'outline', hue: 'rose' } },
+  { id: 'sweep-3', instruction: 'Tap every filled amber star.', cols: 5, rows: 4, targetCount: 5, target: { shape: 'star', fill: 'filled', hue: 'amber' } },
+  { id: 'sweep-4', instruction: 'Tap every outline sky hexagon.', cols: 5, rows: 4, targetCount: 6, target: { shape: 'hexagon', fill: 'outline', hue: 'sky' } },
+  { id: 'sweep-5', instruction: 'Tap every filled rose triangle.', cols: 5, rows: 4, targetCount: 6, target: { shape: 'triangle', fill: 'filled', hue: 'rose' } },
+  { id: 'sweep-6', instruction: 'Tap every outline teal square.', cols: 4, rows: 4, targetCount: 5, target: { shape: 'square', fill: 'outline', hue: 'teal' } },
+  { id: 'sweep-7', instruction: 'Tap every filled sky circle.', cols: 5, rows: 4, targetCount: 5, target: { shape: 'circle', fill: 'filled', hue: 'sky' } },
+  { id: 'sweep-8', instruction: 'Tap every outline amber diamond.', cols: 5, rows: 5, targetCount: 6, target: { shape: 'diamond', fill: 'outline', hue: 'amber' } },
 ];
+
+const makeDistractorFor = (target: Omit<CellItem, 'id' | 'isTarget'>) => (): Omit<CellItem, 'id' | 'isTarget'> => {
+  let shape = ALL_SHAPES[Math.floor(Math.random() * ALL_SHAPES.length)];
+  let fill = ALL_FILLS[Math.floor(Math.random() * ALL_FILLS.length)];
+  let hue = ALL_HUES[Math.floor(Math.random() * ALL_HUES.length)];
+  if (shape === target.shape && fill === target.fill && hue === target.hue) {
+    fill = fill === 'filled' ? 'outline' : 'filled';
+  }
+  return { shape, fill, hue };
+};
+
+const buildRounds = (): SweepRound[] => {
+  const recipes = [...ROUND_RECIPES].sort(() => Math.random() - 0.5).slice(0, ROUNDS_PER_SESSION);
+  return recipes.map((recipe, idx) =>
+    buildRound(
+      recipe.id,
+      recipe.instruction,
+      recipe.cols,
+      recipe.rows,
+      ROUND_SECONDS[Math.min(idx, ROUND_SECONDS.length - 1)],
+      recipe.targetCount,
+      () => recipe.target,
+      makeDistractorFor(recipe.target),
+    ),
+  );
+};
 
 type Phase = 'playing' | 'reveal';
 

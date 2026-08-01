@@ -192,10 +192,66 @@ const LOGIC_PROBLEMS: LogicProblem[] = [
     ],
     correctIndex: 3,
     explanation: 'This is affirming the consequent: mutating without a lock guarantees a race condition, but a race condition could also arise from other causes, so the specific cause cannot be concluded.',
-  }
+  },
+  {
+    id: 'l13',
+    premise1: 'Every deployment that skips the staging gate requires a post-hoc review.',
+    premise2: 'The hotfix for Service Q did not require a post-hoc review.',
+    question: 'What can be validly concluded about the hotfix for Service Q?',
+    options: [
+      'It skipped the staging gate.',
+      'It did not skip the staging gate.',
+      'It was deployed on a weekend.',
+      'It caused no incidents.',
+    ],
+    correctIndex: 1,
+    explanation: 'Contrapositive: skipping staging guarantees a review is required. Since no review was required, staging was not skipped.',
+  },
+  {
+    id: 'l14',
+    premise1: 'If a report is stale, the dashboard shows a warning banner or the data team is auto-notified.',
+    premise2: 'The report is stale, and no warning banner is showing.',
+    question: 'What MUST be true?',
+    options: [
+      'The data team was auto-notified.',
+      'The report is not actually stale.',
+      'The dashboard is broken.',
+      'The data team ignored the report.',
+    ],
+    correctIndex: 0,
+    explanation: 'Disjunctive syllogism: stale implies (banner OR auto-notify). Since the banner is false, auto-notify must be true.',
+  },
+  {
+    id: 'l15',
+    premise1: 'All engineers who pass the on-call shadow program can join the rotation unsupervised.',
+    premise2: 'Priya can join the rotation unsupervised.',
+    question: 'What can be validly concluded about Priya?',
+    options: [
+      'Priya passed the on-call shadow program.',
+      'Priya has the most seniority on the team.',
+      'Nothing can be concluded about how Priya qualified — passing the program is sufficient but not the only stated path.',
+      'Priya is the on-call lead.',
+    ],
+    correctIndex: 2,
+    explanation: 'This is affirming the consequent: passing the program guarantees unsupervised access, but the premises don\u2019t say it\u2019s the only route, so it can\u2019t be concluded Priya took that path.',
+  },
+  {
+    id: 'l16',
+    premise1: 'No feature flag rolled out to 100% skips the canary stage.',
+    premise2: 'The new checkout flag is rolled out to 100%.',
+    question: 'What MUST be true about the new checkout flag?',
+    options: [
+      'It skipped the canary stage.',
+      'It went through the canary stage.',
+      'It was rolled back later.',
+      'It has zero bugs.',
+    ],
+    correctIndex: 1,
+    explanation: 'If no flag at 100% skips canary, and this flag is at 100%, it must have gone through canary.',
+  },
 ];
 
-const SESSION_SIZE = 4;
+const SESSION_SIZE = 5;
 
 function pickSessionProblems(): LogicProblem[] {
   const shuffled = [...LOGIC_PROBLEMS].sort(() => Math.random() - 0.5);
@@ -211,6 +267,7 @@ export const LogicInferenceDrill: React.FC<LogicInferenceDrillProps> = ({ onComp
   const [correctCount, setCorrectCount] = useState<number>(0);
 
   const startTimeRef = useRef<number>(Date.now());
+  const finishedRef = useRef(false);
   const problem = sessionProblems[currentIndex];
 
   // Keyboard shortcut listeners (1-4 or A-D)
@@ -247,6 +304,8 @@ export const LogicInferenceDrill: React.FC<LogicInferenceDrillProps> = ({ onComp
   const handleNext = () => {
     playClickSound();
     if (currentIndex + 1 >= sessionProblems.length) {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       playFanfareSound();
       onComplete({
         scoreEarned: score,

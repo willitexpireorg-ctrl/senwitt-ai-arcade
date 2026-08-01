@@ -26,8 +26,9 @@ interface CutRound {
 const ROUND_SECONDS = 15;
 const POINTS_PER_HIT = 15;
 const PENALTY_PER_MISTAP = 8;
+const ROUNDS_PER_SESSION = 6;
 
-const ROUNDS: CutRound[] = [
+const ROUND_BANK: CutRound[] = [
   {
     id: 'brevity-1',
     tokens: ['The', 'team', 'will', 'revert', 'back', 'to', 'you', 'with', 'the', 'final', 'outcome', 'by', 'Friday.'],
@@ -58,22 +59,100 @@ const ROUNDS: CutRound[] = [
     redundantIndices: [4, 9],
     note: 'A "summary" is already brief, and "new" already implies "additional" — pick one.',
   },
+  {
+    id: 'brevity-6',
+    tokens: [
+      "Let's", 'combine', 'together', 'the', 'two', 'reports', 'into', 'one', 'final', 'summary,', 'and', 'please',
+      'try', 'to', 'keep', 'it', 'fairly', 'brief', 'and', 'concise', 'for', 'leadership.',
+    ],
+    redundantIndices: [2, 19],
+    note: '"Combine" already means together, and "brief" already means concise — pick one.',
+  },
+  {
+    id: 'brevity-7',
+    tokens: ['The', 'absolute', 'final', 'deadline', 'is', 'Friday,', 'and', 'no', 'exceptions', 'whatsoever', 'will', 'be', 'made.'],
+    redundantIndices: [1, 9],
+    note: '"Final" already means absolute, and "no exceptions" already covers "whatsoever."',
+  },
+  {
+    id: 'brevity-8',
+    tokens: ['Please', 'kindly', 'remember', 'to', 'double', 'check', 'the', 'numbers', 'twice', 'before', 'sending', 'the', 'invoice.'],
+    redundantIndices: [1, 8],
+    note: '"Kindly" adds nothing after "please," and "double check" already implies doing it twice.',
+  },
+  {
+    id: 'brevity-9',
+    tokens: [
+      'We', 'reached', 'a', 'mutual', 'agreement', 'together', 'on', 'a', 'final', 'decision', 'that', 'is', 'now',
+      'fully', 'complete.',
+    ],
+    redundantIndices: [5, 13],
+    note: '"Mutual agreement" already implies both sides — "together" repeats it. "Complete" already means fully done.',
+  },
+  {
+    id: 'brevity-10',
+    tokens: ['This', 'new', 'innovation', 'will', 'completely', 'revolutionize', 'our', 'entire', 'workflow', 'process.'],
+    redundantIndices: [1, 7],
+    note: '"Innovation" already implies something new, and "workflow" already covers the whole "process" — "entire" is extra.',
+  },
+  {
+    id: 'brevity-11',
+    tokens: [
+      'At', 'this', 'point', 'in', 'time,', 'we', 'still', 'have', 'not', 'yet', 'received', 'any', 'confirmation',
+      'back', 'from', 'the', 'client.',
+    ],
+    redundantIndices: [9, 13],
+    note: '"Have not received" already covers "yet," and "confirmation" already implies something coming back.',
+  },
+  {
+    id: 'brevity-12',
+    tokens: ['Each', 'individual', 'team', 'member', 'is', 'personally', 'responsible', 'for', 'their', 'own', 'assigned', 'tasks.'],
+    redundantIndices: [1, 5],
+    note: '"Each" already means individual, and "responsible" already implies it\u2019s personal — "personally" repeats it.',
+  },
+  {
+    id: 'brevity-13',
+    tokens: ['We', 'will', 'continue', 'to', 'keep', 'monitoring', 'the', 'situation', 'closely', 'on', 'an', 'ongoing', 'basis.'],
+    redundantIndices: [4, 11],
+    note: '"Continue" already means "keep," and it already implies an ongoing basis — "ongoing" repeats it.',
+  },
 ];
+
+const pickRounds = (): CutRound[] => {
+  const shuffled = [...ROUND_BANK].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, ROUNDS_PER_SESSION);
+};
 
 type Phase = 'playing' | 'reveal';
 
 export const BrevityCutDrill: React.FC<BrevityCutDrillProps> = ({ onComplete, onCancel }) => {
-  const [rounds] = useState<CutRound[]>(ROUNDS);
+  const [rounds] = useState<CutRound[]>(pickRounds);
   const [roundIndex, setRoundIndex] = useState<number>(0);
   const [phase, setPhase] = useState<Phase>('playing');
   const [secondsLeft, setSecondsLeft] = useState<number>(ROUND_SECONDS);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [score, setScore] = useState<number>(0);
-  const [perfectRounds, setPerfectRounds] = useState<number>(0);
   const [roundDelta, setRoundDelta] = useState<number>(0);
 
   const drillStartRef = useRef<number>(Date.now());
   const currentRound = rounds[roundIndex];
+
+  const selectedRef = useRef<Set<number>>(selected);
+  const scoreRef = useRef(0);
+  const perfectRef = useRef(0);
+  const finishingRef = useRef(false);
+  const activeRef = useRef(true);
+
+  useEffect(() => {
+    activeRef.current = true;
+    return () => {
+      activeRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
 
   useEffect(() => {
     if (phase !== 'playing') return;
@@ -87,21 +166,26 @@ export const BrevityCutDrill: React.FC<BrevityCutDrillProps> = ({ onComplete, on
   }, [phase, secondsLeft]);
 
   const toggleWord = (idx: number) => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing' || finishingRef.current) return;
     playClickSound();
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(idx)) next.delete(idx);
       else next.add(idx);
+      // Keep ref in sync immediately so timer expiry never misses a last-ms tap.
+      selectedRef.current = next;
       return next;
     });
   };
 
   const finishRound = () => {
+    // Guard against Lock-in + timer expiry double-scoring in the same tick.
+    if (finishingRef.current) return;
+    finishingRef.current = true;
     const redundantSet = new Set(currentRound.redundantIndices);
     let hits = 0;
     let mistaps = 0;
-    selected.forEach((idx) => {
+    selectedRef.current.forEach((idx) => {
       if (redundantSet.has(idx)) hits += 1;
       else mistaps += 1;
     });
@@ -109,19 +193,20 @@ export const BrevityCutDrill: React.FC<BrevityCutDrillProps> = ({ onComplete, on
     const delta = Math.max(0, hits * POINTS_PER_HIT - mistaps * PENALTY_PER_MISTAP);
     if (isPerfect) {
       playCorrectSound();
-      setPerfectRounds((p) => p + 1);
+      perfectRef.current += 1;
     } else if (hits > 0) {
       playCorrectSound();
     } else {
       playIncorrectSound();
     }
     setRoundDelta(delta);
-    setScore((s) => s + delta);
+    scoreRef.current += delta;
+    setScore(scoreRef.current);
     setPhase('reveal');
   };
 
   const handleLockIn = () => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing' || finishingRef.current) return;
     playClickSound();
     finishRound();
   };
@@ -129,17 +214,21 @@ export const BrevityCutDrill: React.FC<BrevityCutDrillProps> = ({ onComplete, on
   const handleNext = () => {
     playClickSound();
     if (roundIndex + 1 >= rounds.length) {
+      if (!activeRef.current) return;
       playFanfareSound();
       onComplete({
-        scoreEarned: score,
-        correctCount: perfectRounds,
+        scoreEarned: scoreRef.current,
+        correctCount: perfectRef.current,
         totalItems: rounds.length,
         totalTimeMs: Date.now() - drillStartRef.current,
       });
       return;
     }
+    finishingRef.current = false;
     setRoundIndex((i) => i + 1);
-    setSelected(new Set());
+    const empty = new Set<number>();
+    selectedRef.current = empty;
+    setSelected(empty);
     setSecondsLeft(ROUND_SECONDS);
     setPhase('playing');
   };

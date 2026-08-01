@@ -17,6 +17,17 @@ interface VoiceFluencyDrillProps {
   onComplete?: (result: VoiceFluencyCompletionResult) => void;
 }
 
+const VERBOSE_PROMPTS: string[] = [
+  '"At this point in time, it is critically incumbent upon our engineering team to make a concerted effort to optimize workflow processes going forward."',
+  '"I was thinking that perhaps, if it works for everyone involved, we might want to consider the possibility of pushing our launch date back by a few days or so."',
+  '"It has come to my attention that there may potentially be some sort of ongoing issue with the way that our current onboarding process has been structured up to this point."',
+  '"Just wanted to reach out and mention that, whenever it becomes convenient for you, it might be worth taking a look at the numbers in yesterday\u2019s report."',
+  '"Given the current circumstances and everything that has been going on lately, it seems like it could be a reasonable idea to revisit our pricing strategy at some point."',
+  '"I don\u2019t want to speak out of turn here, but it does feel like there might be an opportunity for us to streamline how we currently handle customer support tickets."',
+  '"To whatever extent it is feasible given everyone\u2019s schedules, I would like to propose that we find some time in the near future to discuss the budget."',
+  '"It\u2019s entirely possible that I\u2019m off base here, but it seems like the new feature might benefit from some additional testing before it gets released."',
+];
+
 export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose, onComplete }) => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [spokenText, setSpokenText] = useState<string>('');
@@ -25,7 +36,9 @@ export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose, o
   const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
 
   const sessionStartRef = useRef<number>(Date.now());
-  const verbosePrompt = `"At this point in time, it is critically incumbent upon our engineering team to make a concerted effort to optimize workflow processes going forward."`;
+  const [verbosePrompt] = useState<string>(
+    () => VERBOSE_PROMPTS[Math.floor(Math.random() * VERBOSE_PROMPTS.length)],
+  );
   const targetMaxWords = 8;
 
   useEffect(() => {
@@ -179,7 +192,7 @@ export const VoiceFluencyDrill: React.FC<VoiceFluencyDrillProps> = ({ onClose, o
                 className="text-xs font-extrabold px-2.5 py-0.5 rounded-full"
                 style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c' }}
               >
-                Fluency level: {drillResult.brocaActivationLevel}
+                Fluency level: {drillResult.fluencyLevel}
               </span>
             </div>
 
