@@ -16,6 +16,8 @@ import {
   LazySynonymRaceDrill,
   LazyTonePickDrill,
   LazyStroopDrill,
+  LazyFocusTrackDrill,
+  LazyRoutePlannerDrill,
 } from './engines/lazyEngines';
 import type { AttemptResult, SessionResult, SkillCategory } from '../types';
 import type { DailyWorkoutPlan, WorkoutEngineMechanic } from '../services/dailyWorkoutPlan';
@@ -255,6 +257,10 @@ export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
         return <LazySynonymRaceDrill onComplete={onDone} onCancel={onCancel} />;
       case 'tone_pick':
         return <LazyTonePickDrill onComplete={onDone} onCancel={onCancel} />;
+      case 'attention_track':
+        return <LazyFocusTrackDrill onComplete={onDone} onCancel={onCancel} />;
+      case 'route_plan':
+        return <LazyRoutePlannerDrill onComplete={onDone} onCancel={onCancel} />;
       default:
         return (
           <div className="page-shell py-10 flex flex-col items-center gap-4 text-center">

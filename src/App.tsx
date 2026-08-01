@@ -24,6 +24,8 @@ import {
   LazyPatternShiftDrill,
   LazySynonymRaceDrill,
   LazyTonePickDrill,
+  LazyFocusTrackDrill,
+  LazyRoutePlannerDrill,
   LazyDualNBackGame,
   LazySpatialMemoryGame,
   LazyStroopDrill,
@@ -78,6 +80,8 @@ type ArcadeMode =
   | 'pattern_shift'
   | 'synonym_race'
   | 'tone_pick'
+  | 'attention_track'
+  | 'route_plan'
   | null;
 
 const ARCADE_SKILL: Record<string, SkillCategory> = {
@@ -98,6 +102,8 @@ const ARCADE_SKILL: Record<string, SkillCategory> = {
   pattern_shift: 'reasoning',
   synonym_race: 'writing',
   tone_pick: 'writing',
+  attention_track: 'reasoning',
+  route_plan: 'reasoning',
 };
 
 const recentItemIds = (history: SessionResult[], limit = 80): string[] => {
@@ -330,6 +336,8 @@ export const App: React.FC = () => {
       pattern_shift: 'pattern_shift',
       synonym_race: 'synonym_race',
       tone_pick: 'tone_pick',
+      attention_track: 'attention_track',
+      route_plan: 'route_plan',
     };
 
     if (game.mechanicType === 'voice_drill') {
@@ -530,6 +538,16 @@ export const App: React.FC = () => {
           ) : activeGameMode === 'tone_pick' ? (
             <LazyTonePickDrill
               onComplete={(s) => handleCustomGameComplete(s, 'tone_pick')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'attention_track' ? (
+            <LazyFocusTrackDrill
+              onComplete={(s) => handleCustomGameComplete(s, 'attention_track')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'route_plan' ? (
+            <LazyRoutePlannerDrill
+              onComplete={(s) => handleCustomGameComplete(s, 'route_plan')}
               onCancel={handleCancelSession}
             />
           ) : workoutRunning && runningWorkout ? (

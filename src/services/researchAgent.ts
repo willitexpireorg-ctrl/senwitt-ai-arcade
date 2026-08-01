@@ -27,7 +27,9 @@ export interface GameSpec {
     | 'signal_sweep'
     | 'pattern_shift'
     | 'synonym_race'
-    | 'tone_pick';
+    | 'tone_pick'
+    | 'attention_track'
+    | 'route_plan';
 }
 
 // A small, curated set of mini-games that actually work: four live interactive
@@ -221,6 +223,28 @@ export class ResearchAgent {
         difficultyRange: 'Tier 1-5',
         estimatedDuration: '2 Mins',
         mechanicType: 'tone_pick',
+      },
+      {
+        id: 'game-focus-track',
+        title: 'Focus Track',
+        category: 'reasoning',
+        description: 'Route colored tasks arriving on multiple lanes to their matching destination before they arrive.',
+        scientificRationale: 'Practices divided attention — tracking and acting on several time-pressured streams at once.',
+        neuralTarget: 'Divided Attention',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '1 Min',
+        mechanicType: 'attention_track',
+      },
+      {
+        id: 'game-route-planner',
+        title: 'Route Planner',
+        category: 'reasoning',
+        description: 'Plan a path from a start point that visits every stop on a small grid, in as few moves as possible.',
+        scientificRationale: 'Practices route planning — sequencing moves ahead of time instead of solving step by step.',
+        neuralTarget: 'Spatial Planning',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'route_plan',
       },
       {
         id: 'game-writing-quiz',

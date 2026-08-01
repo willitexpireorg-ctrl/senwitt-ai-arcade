@@ -24,7 +24,9 @@ export type EvidenceKey =
   | 'signal_sweep'
   | 'pattern_shift'
   | 'synonym_race'
-  | 'tone_pick';
+  | 'tone_pick'
+  | 'attention_track'
+  | 'route_plan';
 
 export const EXERCISE_EVIDENCE: Record<EvidenceKey, EvidenceCard> = {
   writing: {
@@ -116,5 +118,15 @@ export const EXERCISE_EVIDENCE: Record<EvidenceKey, EvidenceCard> = {
     practises: 'Matching message tone (professional, warm, or direct) to a stated workplace goal.',
     explanation: 'Tone fit is what keeps a Slack or email from landing colder or sharper than you meant.',
     boundary: 'A handful of scenarios won\u2019t teach full communication strategy — it rehearses reading the goal before you pick the voice.',
+  },
+  attention_track: {
+    practises: 'Tracking several time-pressured tasks on different lanes and routing each to the right place.',
+    explanation: 'This mirrors juggling a few live threads at once — messages, alerts, a call — without letting one slip.',
+    boundary: 'This is a divided-attention drill, not a multitasking endorsement — splitting focus still costs accuracy.',
+  },
+  route_plan: {
+    practises: 'Planning a full route to several stops ahead of time, instead of deciding one step at a time.',
+    explanation: 'This is the same look-ahead you use planning errands, a delivery order, or a meeting-day route.',
+    boundary: 'A handful of small grid puzzles isn\u2019t real-world logistics — it rehearses planning several steps ahead before moving.',
   },
 };

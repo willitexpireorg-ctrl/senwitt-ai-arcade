@@ -73,6 +73,12 @@ export const LazySynonymRaceDrill = withSuspense(
 export const LazyTonePickDrill = withSuspense(
   lazy(() => import('./TonePickDrill').then((m) => ({ default: m.TonePickDrill }))),
 );
+export const LazyFocusTrackDrill = withSuspense(
+  lazy(() => import('./FocusTrackDrill').then((m) => ({ default: m.FocusTrackDrill }))),
+);
+export const LazyRoutePlannerDrill = withSuspense(
+  lazy(() => import('./RoutePlannerDrill').then((m) => ({ default: m.RoutePlannerDrill }))),
+);
 
 export const LazyDualNBackGame = withSuspense(
   lazy(() => import('../DualNBackGame').then((m) => ({ default: m.DualNBackGame }))),
