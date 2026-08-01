@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Download, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { BRAND_IMAGES } from '../assets/brandImages';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -74,12 +75,14 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({ earnedInstallPromp
       style={{ border: '1px solid var(--border-strong)' }}
     >
       <div className="flex items-start gap-3">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: '#ccfbf1', color: 'var(--accent-teal)' }}
-        >
-          <Download className="w-5 h-5" />
-        </div>
+        <img
+          src={BRAND_IMAGES.installHabit}
+          alt=""
+          width={52}
+          height={52}
+          className="install-prompt__art"
+          decoding="async"
+        />
         <div className="flex-1 min-w-0 text-left">
           <p style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
             Install SENWITT

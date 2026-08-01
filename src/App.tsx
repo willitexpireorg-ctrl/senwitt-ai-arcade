@@ -590,6 +590,11 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col selection:bg-teal-200 selection:text-teal-950 relative">
+      <div className="app-atmosphere" aria-hidden="true">
+        <div className="app-atmosphere__blob app-atmosphere__blob--1" />
+        <div className="app-atmosphere__blob app-atmosphere__blob--2" />
+        <div className="app-atmosphere__blob app-atmosphere__blob--3" />
+      </div>
       <Navbar
         progress={progress}
         activeTab={activeTab}

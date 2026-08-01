@@ -12,6 +12,7 @@ import {
   skillLevelLabel,
   type DifficultyTier,
 } from '../services/difficultyFeel';
+import { BRAND_IMAGES } from '../assets/brandImages';
 
 interface AnalyticsPageProps {
   progress: UserProgress;
@@ -340,7 +341,19 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
           Recent sessions
         </h2>
         {recentSessions.length === 0 ? (
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>No sessions yet — start today’s workout.</p>
+          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+            <img
+              src={BRAND_IMAGES.onboardingEmpty}
+              alt=""
+              width={120}
+              height={120}
+              className="illustrative-panel"
+              decoding="async"
+            />
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              No sessions yet — start today&apos;s workout to see your progress here.
+            </p>
+          </div>
         ) : (
           <div className="space-y-2">
             {recentSessions.map((s) => {

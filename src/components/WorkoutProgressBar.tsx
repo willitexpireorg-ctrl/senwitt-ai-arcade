@@ -126,7 +126,7 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
             aria-label="Workout progress"
           >
             <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
+              className="h-full rounded-full progress-fill transition-all duration-500 ease-out"
               style={{
                 width: `${fillPct}%`,
                 background: 'linear-gradient(90deg, #0f766e 0%, #14b8a6 55%, #ff5c3a 100%)',
@@ -163,7 +163,7 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
               <span
                 key={step.id}
                 role="listitem"
-                className="inline-flex items-center rounded-lg px-2 py-1 text-[11px] font-bold"
+                className={`inline-flex items-center rounded-lg px-2 py-1 text-[11px] font-bold transition-transform duration-200 ${state === 'current' ? 'animate-breathe' : ''}`}
                 style={{
                   background: bg,
                   color: ink,

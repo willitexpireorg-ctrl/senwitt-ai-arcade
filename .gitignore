@@ -14,6 +14,19 @@ dist-ssr
 .env
 .env.local
 
+# Unity (local editor cache — keep Assets/ scripts in git)
+unity/**/Library/
+unity/**/Temp/
+unity/**/Obj/
+unity/**/Logs/
+unity/**/UserSettings/
+unity/**/*.csproj
+unity/**/*.sln
+unity/**/MemoryCaptures/
+
+# Built WebGL is large — commit only when intentionally shipping a pilot build
+# public/unity/spatial-memory/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

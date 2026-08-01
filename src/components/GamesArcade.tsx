@@ -11,6 +11,7 @@ import { ResearchAgent } from '../services/researchAgent';
 import type { GameSpec } from '../services/researchAgent';
 import type { BaselinePriority, SkillCategory, UserProgress } from '../types';
 import { playClickSound } from '../services/sound';
+import { GAME_COVERS } from '../assets/brandImages';
 
 interface GamesArcadeProps {
   onLaunchGame: (game: GameSpec) => void;
@@ -110,7 +111,7 @@ const CATEGORY_STYLES: Record<string, {
   },
 };
 
-/** Per-game visual identity — every title gets a unique icon + art well. */
+/** Per-game visual identity — Lucide fallback + optional cover art. */
 const GAME_VISUALS: Record<string, { icon: LucideIcon; artClass: string; label: string }> = {
   'game-spatial': {
     icon: LayoutGrid,
@@ -272,6 +273,7 @@ const renderGameTile = (
   const style = CATEGORY_STYLES[game.category] ?? CATEGORY_STYLES.writing;
   const visual = GAME_VISUALS[game.id] ?? FALLBACK_VISUAL;
   const Icon = visual.icon;
+  const coverSrc = GAME_COVERS[game.id];
   const isLive = LIVE_MECHANIC_TYPES.has(game.mechanicType);
   const recommended = Boolean(opts?.recommended);
   const locked = Boolean(opts?.locked);
@@ -285,24 +287,29 @@ const renderGameTile = (
     onLaunchGame(game);
   };
 
+  const tileVariantClass = recommended ? 'game-tile--recommended' : locked ? 'game-tile--locked' : '';
+
   return (
     <article
       key={game.id}
-      className="game-tile animate-fadeInUp"
-      style={
-        recommended
-          ? {
-              border: '2px solid #0f766e',
-              transform: 'scale(1.02)',
-              boxShadow: '0 8px 24px rgba(15, 118, 110, 0.12)',
-            }
-          : locked
-            ? { opacity: 0.72 }
-            : undefined
-      }
+      className={`game-tile animate-fadeInUp ${tileVariantClass}`}
     >
-      <div className={`tile-art ${visual.artClass}`} role="img" aria-label={visual.label} style={locked ? { filter: 'grayscale(0.35)' } : undefined}>
-        {locked ? <Lock className="tile-art__icon" strokeWidth={1.75} aria-hidden /> : <Icon className="tile-art__icon" strokeWidth={1.75} aria-hidden />}
+      <div
+        className={`tile-art ${coverSrc ? 'tile-art--cover' : visual.artClass}`}
+        role="img"
+        aria-label={visual.label}
+        style={{
+          ...(coverSrc ? { backgroundImage: `url(${coverSrc})` } : {}),
+          ...(locked ? { filter: 'grayscale(0.35)' } : {}),
+        }}
+      >
+        {locked ? (
+          <Lock className="tile-art__icon" strokeWidth={1.75} aria-hidden />
+        ) : coverSrc ? (
+          <span className="tile-art__cover-fade" aria-hidden />
+        ) : (
+          <Icon className="tile-art__icon" strokeWidth={1.75} aria-hidden />
+        )}
       </div>
 
       <div className="tile-body">

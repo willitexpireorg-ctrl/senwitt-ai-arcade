@@ -201,7 +201,7 @@ export const ExercisePlayer: React.FC<ExercisePlayerProps> = ({ items, setMode, 
 
       <div className="w-full h-3 rounded-full mb-8 overflow-hidden" style={{ background: 'var(--bg-secondary)' }}>
         <div
-          className="h-full progress-bar-teal transition-all duration-300 rounded-full"
+          className="h-full progress-bar-teal progress-fill transition-all duration-300 rounded-full"
           style={{ width: `${((currentIndex + 1) / items.length) * 100}%` }}
         />
       </div>
@@ -271,9 +271,9 @@ export const ExercisePlayer: React.FC<ExercisePlayerProps> = ({ items, setMode, 
 
             if (isAnswered) {
               if (isCorrect) {
-                btnClass += 'bg-emerald-500 border-emerald-700 text-white';
+                btnClass += 'bg-emerald-500 border-emerald-700 text-white animate-answer-correct';
               } else if (isSelected && !isCorrect) {
-                btnClass += 'bg-rose-500 border-rose-700 text-white';
+                btnClass += 'bg-rose-500 border-rose-700 text-white animate-answer-incorrect';
               } else {
                 btnClass += 'bg-white border-[#d7e0ea] text-[var(--text-muted)] opacity-55';
               }

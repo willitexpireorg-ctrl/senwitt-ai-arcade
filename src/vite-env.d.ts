@@ -12,6 +12,8 @@ interface ImportMetaEnv {
    * arcade, Weekend Deep Set) without Stripe. Use for local playtesting only.
    */
   readonly VITE_TEST_MODE?: string;
+  /** Prefer Unity WebGL for Spatial Memory when a build is present. */
+  readonly VITE_UNITY_SPATIAL?: string;
 }
 
 interface ImportMeta {

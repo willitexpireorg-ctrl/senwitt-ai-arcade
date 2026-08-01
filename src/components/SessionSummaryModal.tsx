@@ -90,8 +90,8 @@ export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="surface max-w-md w-full p-6 md:p-8 text-center relative animate-fadeIn my-4 max-h-[min(92vh,720px)] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+      <div className="surface max-w-md w-full p-6 md:p-8 text-center relative animate-modalPop my-4 max-h-[min(92vh,720px)] overflow-y-auto">
         <div
           className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
           style={{ background: 'linear-gradient(145deg, #17a89a, #0f766e)', boxShadow: '0 10px 24px rgba(15,118,110,0.28)' }}

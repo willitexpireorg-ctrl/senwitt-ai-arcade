@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
-  Flame, Award, Brain, Volume2, VolumeX, Gamepad2,
+  Flame, Award, Volume2, VolumeX, Gamepad2,
   MessageSquare, History, Home, Library, ChartLine, UserCircle,
 } from 'lucide-react';
 import type { UserProgress } from '../types';
 import { isSoundMuted, setSoundMuted, getSoundVolume, setSoundVolume, playClickSound } from '../services/sound';
 import { isTestModeEnabled } from '../services/entitlements';
+import { BRAND_IMAGES } from '../assets/brandImages';
 
 interface NavbarProps {
   progress: UserProgress;
@@ -84,12 +85,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleTabClick('dashboard')}
             className="flex items-center gap-3 cursor-pointer group focus-ring rounded-xl p-1 shrink-0"
           >
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
-              style={{ background: 'linear-gradient(145deg, #14b8a6, #0f766e)', boxShadow: '0 6px 16px rgba(15,118,110,0.28)' }}
-            >
-              <Brain className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src={BRAND_IMAGES.brandMark}
+              alt=""
+              width={40}
+              height={40}
+              className="brand-mark transition-transform duration-200 group-hover:scale-105"
+              decoding="async"
+            />
             <div className="hidden sm:block">
               <span
                 style={{

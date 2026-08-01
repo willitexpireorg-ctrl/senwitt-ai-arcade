@@ -122,7 +122,7 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, isPremiu
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-end">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-end animate-fadeIn">
       <div
         className="w-full max-w-md flex flex-col h-full shadow-2xl animate-slideLeft"
         style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-color)' }}

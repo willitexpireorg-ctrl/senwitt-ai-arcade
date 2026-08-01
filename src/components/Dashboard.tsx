@@ -11,6 +11,7 @@ import { getLocalDateString, hasTrainedToday } from '../services/storage';
 import { peekDailyPlanPreview } from '../services/dailyWorkoutPlan';
 import { playClickSound } from '../services/sound';
 import { requestReminderPermission, postReminderScheduleToSw } from '../services/reminderScheduler';
+import { BRAND_IMAGES } from '../assets/brandImages';
 
 const ANCHOR_OPTIONS = ['morning coffee', 'after lunch', 'end of workday', 'evening wind-down'] as const;
 
@@ -145,7 +146,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="animate-tabSlideIn">
-      <section className="hero-plane hero-plane--compact">
+      <section className="hero-plane hero-plane--compact hero-plane--photo">
+        <img
+          className="hero-plane__photo"
+          src={BRAND_IMAGES.hero}
+          alt=""
+          aria-hidden
+          decoding="async"
+          fetchPriority="high"
+        />
         <div className="hero-center">
           <p className="hero-brand animate-fadeInUp">SENWITT</p>
           <h1 className="hero-headline animate-fadeInUp" style={{ animationDelay: '60ms' }}>
@@ -167,6 +176,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onSaveHabitPrefs({ reminderLastShownDate: today })
             }
           />
+        )}
+
+        {sessionHistory.length === 0 && (
+          <div
+            className="surface animate-fadeInUp mb-4 p-4 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left"
+            style={{ animationDelay: '140ms' }}
+          >
+            <img
+              src={BRAND_IMAGES.onboardingEmpty}
+              alt=""
+              width={112}
+              height={112}
+              className="illustrative-panel"
+              decoding="async"
+            />
+            <div>
+              <p className="font-extrabold" style={{ color: 'var(--text-primary)', fontSize: '1.05rem' }}>
+                Your first five minutes start here
+              </p>
+              <p className="text-sm font-semibold mt-1" style={{ color: 'var(--text-secondary)' }}>
+                A short daily set for clearer writing, sharper recall, and calm focus — no score theater.
+              </p>
+            </div>
+          </div>
         )}
 
         <div className="training-card animate-fadeInUp" style={{ animationDelay: '160ms' }}>

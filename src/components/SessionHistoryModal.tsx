@@ -70,8 +70,8 @@ export const SessionHistoryModal: React.FC<SessionHistoryModalProps> = ({ histor
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="surface max-w-2xl w-full p-6 text-left relative animate-fadeIn flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+      <div className="surface max-w-2xl w-full p-6 text-left relative animate-modalPop flex flex-col max-h-[85vh]">
         <input
           type="file"
           ref={fileInputRef}

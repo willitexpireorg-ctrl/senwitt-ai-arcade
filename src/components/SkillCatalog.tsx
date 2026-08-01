@@ -154,7 +154,7 @@ export const SkillCatalog: React.FC<SkillCatalogProps> = ({ progress, onStartSki
                   </div>
                   <div style={{ height: '8px', background: 'var(--bg-secondary)', borderRadius: '99px', overflow: 'hidden', marginBottom: '0.95rem' }}>
                     <div
-                      className={meta.progressBarClass}
+                      className={`${meta.progressBarClass} progress-fill`}
                       style={{ height: '100%', borderRadius: '99px', width: `${Math.max(5, levelProgress)}%`, transition: 'width 0.8s ease' }}
                     />
                   </div>
