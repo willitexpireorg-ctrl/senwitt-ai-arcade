@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Flame, Award, Brain, Volume2, VolumeX, Gamepad2,
-  MessageSquare, History, Home, Library, ChartLine,
+  MessageSquare, History, Home, Library, ChartLine, UserCircle,
 } from 'lucide-react';
 import type { UserProgress } from '../types';
 import { isSoundMuted, setSoundMuted, getSoundVolume, setSoundVolume, playClickSound } from '../services/sound';
@@ -12,6 +12,8 @@ interface NavbarProps {
   setActiveTab: (tab: string) => void;
   onOpenWittChat: () => void;
   onOpenHistoryModal: () => void;
+  onOpenAccount: () => void;
+  isSignedIn?: boolean;
   hideBottomNav?: boolean;
 }
 
@@ -28,6 +30,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenWittChat,
   onOpenHistoryModal,
+  onOpenAccount,
+  isSignedIn = false,
   hideBottomNav = false,
 }) => {
   const [muted, setMuted] = useState<boolean>(isSoundMuted());
@@ -149,6 +153,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
             >
               <History className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={onOpenAccount}
+              title="Account & sync"
+              aria-label="Open account and cloud sync settings"
+              className="p-2 rounded-xl transition-all focus-ring"
+              style={{
+                background: isSignedIn ? '#ccfbf1' : 'var(--bg-secondary)',
+                border: `1px solid ${isSignedIn ? '#99f6e4' : 'var(--border-color)'}`,
+                color: isSignedIn ? 'var(--accent-teal)' : 'var(--text-secondary)',
+              }}
+            >
+              <UserCircle className="w-4 h-4" />
             </button>
 
             <div className="relative flex items-center">

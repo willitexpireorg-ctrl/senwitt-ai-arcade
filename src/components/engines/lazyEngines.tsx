@@ -28,9 +28,44 @@ export const EngineSuspenseFallback: React.FC = () => (
   </div>
 );
 
-function withSuspense<P extends object>(LazyComp: ComponentType<P>): ComponentType<P> {
+/**
+ * VoiceFluencyDrill renders as a `fixed inset-0 z-50` overlay modal (unlike the
+ * other engines here, which are full-page tab content). Give it a matching
+ * overlay fallback so the loading state doesn't flash as an inline block
+ * among App.tsx's flex-column siblings (main/footer) while the chunk loads.
+ */
+const ModalEngineSuspenseFallback: React.FC = () => (
+  <div
+    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+    role="status"
+    aria-live="polite"
+    aria-label="Loading drill"
+  >
+    <div
+      className="surface max-w-xl w-full p-6 md:p-8 flex flex-col items-center gap-4"
+      style={{ minHeight: '260px', justifyContent: 'center' }}
+    >
+      <div
+        className="w-12 h-12 rounded-2xl animate-pulse"
+        style={{
+          background: 'linear-gradient(145deg, #17a89a, #0f766e)',
+          boxShadow: '0 8px 20px rgba(15,118,110,0.22)',
+        }}
+      />
+      <div
+        className="w-full h-24 rounded-2xl animate-pulse"
+        style={{ background: 'var(--bg-surface-soft)', border: '1px solid var(--border-color)' }}
+      />
+    </div>
+  </div>
+);
+
+function withSuspense<P extends object>(
+  LazyComp: ComponentType<P>,
+  fallback: React.ReactNode = <EngineSuspenseFallback />,
+): ComponentType<P> {
   const Wrapped = (props: P) => (
-    <Suspense fallback={<EngineSuspenseFallback />}>
+    <Suspense fallback={fallback}>
       <LazyComp {...props} />
     </Suspense>
   );
@@ -94,6 +129,7 @@ export const LazyLogicInferenceDrill = withSuspense(
 );
 export const LazyVoiceFluencyDrill = withSuspense(
   lazy(() => import('../VoiceFluencyDrill').then((m) => ({ default: m.VoiceFluencyDrill }))),
+  <ModalEngineSuspenseFallback />,
 );
 export const LazyBaselineAssessment = withSuspense(
   lazy(() => import('../BaselineAssessment').then((m) => ({ default: m.BaselineAssessment }))),

@@ -4,7 +4,7 @@ import {
   Scale, Mic, PenLine, Calculator, Code2, BookSearch, Brain,
   FileText, MessageSquareText, Percent, Scissors, ShoppingCart, ListOrdered, Zap,
   GitCompare, ScanSearch, Shuffle, Sparkles, BookA, MessageCircle,
-  TrainFront, Waypoints,
+  TrainFront, Waypoints, Lock,
   type LucideIcon,
 } from 'lucide-react';
 import { ResearchAgent } from '../services/researchAgent';
@@ -15,6 +15,10 @@ import { playClickSound } from '../services/sound';
 interface GamesArcadeProps {
   onLaunchGame: (game: GameSpec) => void;
   progress?: UserProgress;
+  /** SENWITT Phase 2: free tier only gets the 3 recommended games unlocked. */
+  isPremium?: boolean;
+  /** Opens the upgrade modal — called instead of launching a locked game. */
+  onRequestUpgrade?: () => void;
 }
 
 const BASELINE_TO_CATEGORY: Record<BaselinePriority, SkillCategory> = {
@@ -258,13 +262,23 @@ const CATEGORIES = [
 const renderGameTile = (
   game: GameSpec,
   onLaunchGame: (game: GameSpec) => void,
-  opts?: { recommended?: boolean },
+  opts?: { recommended?: boolean; locked?: boolean; onRequestUpgrade?: () => void },
 ) => {
   const style = CATEGORY_STYLES[game.category] ?? CATEGORY_STYLES.writing;
   const visual = GAME_VISUALS[game.id] ?? FALLBACK_VISUAL;
   const Icon = visual.icon;
   const isLive = LIVE_MECHANIC_TYPES.has(game.mechanicType);
   const recommended = Boolean(opts?.recommended);
+  const locked = Boolean(opts?.locked);
+
+  const handlePlay = () => {
+    playClickSound();
+    if (locked) {
+      opts?.onRequestUpgrade?.();
+      return;
+    }
+    onLaunchGame(game);
+  };
 
   return (
     <article
@@ -277,11 +291,13 @@ const renderGameTile = (
               transform: 'scale(1.02)',
               boxShadow: '0 8px 24px rgba(15, 118, 110, 0.12)',
             }
-          : undefined
+          : locked
+            ? { opacity: 0.72 }
+            : undefined
       }
     >
-      <div className={`tile-art ${visual.artClass}`} role="img" aria-label={visual.label}>
-        <Icon className="tile-art__icon" strokeWidth={1.75} aria-hidden />
+      <div className={`tile-art ${visual.artClass}`} role="img" aria-label={visual.label} style={locked ? { filter: 'grayscale(0.35)' } : undefined}>
+        {locked ? <Lock className="tile-art__icon" strokeWidth={1.75} aria-hidden /> : <Icon className="tile-art__icon" strokeWidth={1.75} aria-hidden />}
       </div>
 
       <div className="tile-body">
@@ -298,7 +314,15 @@ const renderGameTile = (
                 For you
               </span>
             )}
-            {isLive && (
+            {locked && (
+              <span
+                className="text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1"
+                style={{ background: '#fff1ed', color: 'var(--accent-coral)', border: '1px solid #ffd4c8' }}
+              >
+                <Lock className="w-2.5 h-2.5" /> Premium
+              </span>
+            )}
+            {isLive && !locked && (
               <span className="live-badge">
                 <span className="live-badge__dot" />
                 Live
@@ -322,18 +346,18 @@ const renderGameTile = (
 
         <button
           type="button"
-          onClick={() => { playClickSound(); onLaunchGame(game); }}
-          className={`btn-3d ${recommended ? 'btn-3d-teal' : style.btnClass} w-full py-3.5 flex items-center justify-center gap-2 text-sm mt-4`}
+          onClick={handlePlay}
+          className={`btn-3d ${recommended ? 'btn-3d-teal' : locked ? 'btn-3d-coral' : style.btnClass} w-full py-3.5 flex items-center justify-center gap-2 text-sm mt-4`}
         >
-          <Play className="w-4 h-4" style={{ fill: 'white' }} />
-          <span>Play</span>
+          {locked ? <Lock className="w-4 h-4" /> : <Play className="w-4 h-4" style={{ fill: 'white' }} />}
+          <span>{locked ? 'Upgrade to play' : 'Play'}</span>
         </button>
       </div>
     </article>
   );
 };
 
-export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame, progress }) => {
+export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame, progress, isPremium = false, onRequestUpgrade }) => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const games = ResearchAgent.getGameSuite();
 
@@ -341,6 +365,7 @@ export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame, progress
     () => pickRecommendedGames(games, progress, 3),
     [games, progress],
   );
+  const recommendedIds = useMemo(() => new Set(recommended.map((g) => g.id)), [recommended]);
   const filteredGames = filterCategory === 'all'
     ? games
     : games.filter((g) => g.category === filterCategory);
@@ -355,6 +380,18 @@ export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame, progress
         <h1>Games</h1>
         <p>Live mini-games and short drills — pick one clear target and play.</p>
       </div>
+
+      {!isPremium && (
+        <div
+          className="surface-soft p-4 flex items-start gap-3 text-xs font-semibold mb-8"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          <Lock className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--accent-coral)' }} />
+          <p>
+            Free plan includes your 3 recommended games below. Upgrade to SENWITT Premium to unlock the full arcade.
+          </p>
+        </div>
+      )}
 
       {recommended.length > 0 && (
         <section className="mb-10">
@@ -394,7 +431,12 @@ export const GamesArcade: React.FC<GamesArcadeProps> = ({ onLaunchGame, progress
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children w-full">
-        {filteredGames.map((game) => renderGameTile(game, onLaunchGame))}
+        {filteredGames.map((game) =>
+          renderGameTile(game, onLaunchGame, {
+            locked: !isPremium && !recommendedIds.has(game.id),
+            onRequestUpgrade,
+          }),
+        )}
       </div>
     </div>
   );

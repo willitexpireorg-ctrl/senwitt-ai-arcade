@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Play, Coffee, Calendar, Flame, TrendingUp, Sparkles, Gauge, Zap, CheckCircle2, ChevronDown, ChevronUp, Anchor, Bell,
+  Play, Coffee, Calendar, Flame, TrendingUp, Sparkles, Gauge, Zap, CheckCircle2, ChevronDown, ChevronUp, Anchor, Bell, Lock,
 } from 'lucide-react';
 import type { UserProgress, SessionResult, SetMode, SkillCategory } from '../types';
 import type { HabitPreferencesPartial, ActiveWorkoutState } from '../services/storage';
@@ -26,6 +26,10 @@ interface DashboardProps {
   onOpenGames?: () => void;
   /** Current adaptive difficulty tier label (e.g. Challenging) */
   difficultyTierLabel?: string | null;
+  /** SENWITT Phase 2: Weekend Deep Set requires premium. */
+  isPremium?: boolean;
+  /** Opens the upgrade modal — called instead of starting Weekend Deep Set when free. */
+  onRequestUpgrade?: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -39,6 +43,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSaveHabitPrefs,
   onOpenGames,
   difficultyTierLabel = null,
+  isPremium = false,
+  onRequestUpgrade,
 }) => {
   const xpPercent = Math.min(100, ((progress.sharpnessScore - 300) / 700) * 100);
   const ringSize = 112;
@@ -455,18 +461,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
                   <div className="tile-body justify-between gap-5">
                     <div>
-                      <h3 className="tile-title">Weekend Deep Set</h3>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="tile-title mb-0">Weekend Deep Set</h3>
+                        {!isPremium && (
+                          <span
+                            className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                            style={{ background: '#fff1ed', color: 'var(--accent-coral)', border: '1px solid #ffd4c8' }}
+                          >
+                            <Lock className="w-2.5 h-2.5" /> Premium
+                          </span>
+                        )}
+                      </div>
                       <p className="tile-desc">
                         Six mixed steps — quizzes plus drills across memory, writing, numbers, and reasoning.
                       </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => onStartSet('weekend_long')}
-                      className="btn-3d btn-3d-teal w-full py-3.5 flex items-center justify-center gap-2 text-sm"
+                      onClick={() => {
+                        if (isPremium) onStartSet('weekend_long');
+                        else onRequestUpgrade?.();
+                      }}
+                      className={`btn-3d ${isPremium ? 'btn-3d-teal' : 'btn-3d-coral'} w-full py-3.5 flex items-center justify-center gap-2 text-sm`}
                     >
-                      <Play className="w-4 h-4" style={{ fill: 'white' }} />
-                      <span>Launch · ~10 min</span>
+                      {isPremium ? <Play className="w-4 h-4" style={{ fill: 'white' }} /> : <Lock className="w-4 h-4" />}
+                      <span>{isPremium ? 'Launch · ~10 min' : 'Upgrade to unlock'}</span>
                     </button>
                   </div>
                 </article>

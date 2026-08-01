@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { X, Send, Bot, Sparkles, User } from 'lucide-react';
+import { X, Send, Bot, Sparkles, User, Loader2 } from 'lucide-react';
 import type { UserProgress } from '../types';
 import { playClickSound } from '../services/sound';
+import { wittLocalReply } from '../services/wittLocalReply';
+import { getAccessToken } from '../services/authService';
 
 interface WittChatModalProps {
   progress: UserProgress;
+  isPremium: boolean;
   onClose: () => void;
 }
 
@@ -15,55 +18,107 @@ interface ChatMessage {
   timestamp: string;
 }
 
-export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose }) => {
+const WITT_CHAT_TIMEOUT_MS = 12_000;
+
+const nowStamp = (): string => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, isPremium, onClose }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       sender: 'witt',
       text: `Hi! I'm Witt, your training coach. Your current Sharpness is ${progress.sharpnessScore} with a ${progress.streakDays}-day streak. Ask me about streaks, logical fallacies, code scoping, or writing fluff — I'll do my best with a few quick tips!`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: nowStamp(),
     },
   ]);
   const [inputText, setInputText] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [statusLabel, setStatusLabel] = useState<string>('Quick coach tips');
+
+  const appendWittReply = (text: string, status: string) => {
+    setStatusLabel(status);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `witt-${Date.now()}`,
+        sender: 'witt',
+        text,
+        timestamp: nowStamp(),
+      },
+    ]);
+  };
+
+  const fetchLlmReply = async (userText: string): Promise<string | null> => {
+    const token = await getAccessToken();
+    if (!token) return null;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), WITT_CHAT_TIMEOUT_MS);
+
+    try {
+      const res = await fetch('/api/witt-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: userText,
+          progressSnapshot: {
+            sharpnessScore: progress.sharpnessScore,
+            streakDays: progress.streakDays,
+            beltRank: progress.beltRank,
+          },
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) return null;
+      const data = (await res.json()) as { reply?: string };
+      return data.reply?.trim() || null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
 
   const handleSendMessage = () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isLoading) return;
     playClickSound();
 
+    const trimmedText = inputText.trim();
     const userMsg: ChatMessage = {
       id: `usr-${Date.now()}`,
       sender: 'user',
-      text: inputText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: trimmedText,
+      timestamp: nowStamp(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    const promptLower = inputText.toLowerCase();
     setInputText('');
+    setIsLoading(true);
 
-    setTimeout(() => {
-      let replyText =
-        `Nice question. Short daily reps in writing, logic, and code help you keep solving things yourself instead of always asking a tool first.`;
+    if (!isPremium) {
+      // Free tier: local tips only, no network call. Still gated behind
+      // isLoading so the send button/input stay disabled during the delay
+      // and a fast double-click/double-Enter can't queue two replies.
+      setTimeout(() => {
+        appendWittReply(wittLocalReply(trimmedText, progress), 'Quick tips');
+        setIsLoading(false);
+      }, 400);
+      return;
+    }
 
-      if (promptLower.includes('streak') || promptLower.includes('belt')) {
-        replyText = `You're on ${progress.beltRank} with a ${progress.streakDays}-day streak. Finish today's set to keep it going.`;
-      } else if (promptLower.includes('fallacy') || promptLower.includes('logic')) {
-        replyText = `Watch for weak arguments — circular reasoning, straw men, and attacks on the person instead of the claim. The logic games are good practice for spotting those.`;
-      } else if (promptLower.includes('code') || promptLower.includes('scope')) {
-        replyText = `Trace code by hand before you trust a suggested fix. Closures and shared loop variables still trip people up — our code drills target that.`;
-      } else if (promptLower.includes('fluff') || promptLower.includes('writing')) {
-        replyText = `Cut filler. Prefer short active sentences over corporate padding. The writing drills train that habit.`;
-      }
-
-      const wittReply: ChatMessage = {
-        id: `witt-${Date.now()}`,
-        sender: 'witt',
-        text: replyText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages((prev) => [...prev, wittReply]);
-    }, 500);
+    fetchLlmReply(trimmedText)
+      .then((reply) => {
+        if (reply) {
+          appendWittReply(reply, 'Witt coach');
+        } else {
+          appendWittReply(wittLocalReply(trimmedText, progress), 'Quick tips');
+        }
+      })
+      .finally(() => setIsLoading(false));
   };
 
   return (
@@ -87,7 +142,7 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
               <h3 className="font-extrabold text-sm flex items-center gap-1.5">
                 Witt Coach <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent-teal)' }} />
               </h3>
-              <span className="text-[10px] font-bold" style={{ color: '#059669' }}>● Quick coach tips</span>
+              <span className="text-[10px] font-bold" style={{ color: '#059669' }}>● {statusLabel}</span>
             </div>
           </div>
 
@@ -137,6 +192,24 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
               )}
             </div>
           ))}
+
+          {isLoading && (
+            <div className="flex gap-2.5 justify-start">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
+                style={{ background: 'var(--accent-teal)' }}
+              >
+                <Bot className="w-4 h-4" />
+              </div>
+              <div
+                className="max-w-[80%] p-3.5 rounded-2xl font-semibold flex items-center gap-2"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderBottomLeftRadius: 4 }}
+              >
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Thinking…</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div
@@ -151,11 +224,13 @@ export const WittChatModal: React.FC<WittChatModalProps> = ({ progress, onClose 
             placeholder="Ask Witt about streaks, logic, code…"
             className="flex-1 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus-ring"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+            disabled={isLoading}
           />
           <button
             onClick={handleSendMessage}
-            className="p-2.5 rounded-xl text-white shrink-0"
+            className="p-2.5 rounded-xl text-white shrink-0 disabled:opacity-50"
             style={{ background: 'var(--accent-teal)' }}
+            disabled={isLoading}
           >
             <Send className="w-4 h-4" />
           </button>

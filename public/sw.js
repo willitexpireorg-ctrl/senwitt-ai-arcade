@@ -1,4 +1,4 @@
-const CACHE_NAME = 'senwitt-v3';
+const CACHE_NAME = 'senwitt-v4';
 const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/favicon.svg'];
 
 /** In-memory reminder prefs (SW may be killed; page is source of truth). */
@@ -34,6 +34,25 @@ self.addEventListener('fetch', (event) => {
       return cached || network;
     }),
   );
+});
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { title: 'SENWITT', body: event.data ? event.data.text() : undefined };
+  }
+
+  const title = typeof payload.title === 'string' ? payload.title : "Today's set is ready";
+  const options = {
+    body: typeof payload.body === 'string' ? payload.body : 'A few minutes keeps your thinking sharp.',
+    icon: '/favicon.svg',
+    tag: 'senwitt-push',
+    data: { url: typeof payload.url === 'string' ? payload.url : '/' },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {

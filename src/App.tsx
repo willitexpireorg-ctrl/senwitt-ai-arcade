@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
-import { SkillCatalog } from './components/SkillCatalog';
-import { AnalyticsPage } from './components/AnalyticsPage';
 import { ExercisePlayer } from './components/ExercisePlayer';
-import { GamesArcade } from './components/GamesArcade';
-import { SessionSummaryModal } from './components/SessionSummaryModal';
-import { WittChatModal } from './components/WittChatModal';
-import { SessionHistoryModal } from './components/SessionHistoryModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { InstallPrompt } from './components/InstallPrompt';
 import { WorkoutRunner } from './components/WorkoutRunner';
+import {
+  LazyAnalyticsPage,
+  LazyGamesArcade,
+  LazySkillCatalog,
+  LazyWittChatModal,
+  LazySessionHistoryModal,
+  LazyInstallPrompt,
+  LazyUpgradeModal,
+  LazyAccountModal,
+  LazySessionSummaryModal,
+} from './components/lazyPages';
 import {
   LazyBriefRecallDrill,
   LazyClearerSentenceDrill,
@@ -62,6 +66,11 @@ import {
   notifyDailyReadyIfDue,
   postReminderScheduleToSw,
 } from './services/reminderScheduler';
+import { onAuthStateChange } from './services/authService';
+import { ensureProfile, pullAndMerge, pushSoon, resetSyncState, setSyncUser } from './services/syncService';
+import { subscribeWebPush, unsubscribeWebPush } from './services/webPush';
+import { refreshEntitlement, subscribeEntitlement, canAccessWeekendLong } from './services/entitlements';
+import type { Session } from '@supabase/supabase-js';
 
 type ArcadeMode =
   | 'spatial'
@@ -157,6 +166,22 @@ export const App: React.FC = () => {
   const [isWittChatOpen, setIsWittChatOpen] = useState<boolean>(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
   const [isVoiceDrillOpen, setIsVoiceDrillOpen] = useState<boolean>(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState<boolean>(false);
+  const [upgradeModalFromCheckout, setUpgradeModalFromCheckout] = useState<boolean>(false);
+
+  const refreshFromStorage = useCallback(() => {
+    setProgress(getStoredProgress());
+    setSessionHistory(getSessionHistory());
+    const pulledAbility = getStoredAbilityProfile();
+    setAbilityTheta(pulledAbility.theta);
+    // Keep the long-lived orchestrator instance in sync too, otherwise it
+    // keeps calibrating from its stale pre-pull profile and would silently
+    // clobber the just-imported ability data on the next completed session.
+    abilityOrchestrator.setAbilityProfile(pulledAbility);
+  }, [abilityOrchestrator]);
 
   useEffect(() => {
     setProgress(getStoredProgress());
@@ -171,6 +196,46 @@ export const App: React.FC = () => {
       const p = getStoredProgress();
       notifyDailyReadyIfDue(p, hasTrainedToday(p));
     });
+  }, []);
+
+  // Cloud sync: subscribe to auth state; when signed in, pull remote data (if
+  // newer) and refresh local React state, otherwise push local data up.
+  useEffect(() => {
+    const unsubscribe = onAuthStateChange((nextSession) => {
+      setSession(nextSession);
+      if (nextSession) {
+        const userId = nextSession.user.id;
+        setSyncUser(userId);
+        void refreshEntitlement(userId);
+        void ensureProfile(userId, nextSession.user.email ?? null)
+          .then(() => pullAndMerge(userId))
+          .then((result) => {
+            if (result.imported) refreshFromStorage();
+          });
+      } else {
+        resetSyncState();
+        void refreshEntitlement(null);
+      }
+    });
+    return unsubscribe;
+  }, [refreshFromStorage]);
+
+  // Keep local isPremium state mirrored to the entitlements cache (updated by
+  // sign-in/out above and by the Upgrade modal's "Refresh entitlement" action).
+  useEffect(() => subscribeEntitlement(setIsPremium), []);
+
+  // Stripe Checkout redirects back with `?checkout=success` — surface the
+  // Upgrade modal so the user can confirm/refresh, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') === 'success') {
+      setUpgradeModalFromCheckout(true);
+      setIsUpgradeModalOpen(true);
+      params.delete('checkout');
+      const nextSearch = params.toString();
+      const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+      window.history.replaceState(null, '', nextUrl);
+    }
   }, []);
 
   // Keep SW in sync when reminder prefs change (including disable).
@@ -223,15 +288,18 @@ export const App: React.FC = () => {
     setSessionAbilityAfter({ theta: afterProfile.theta });
     setSessionArcadeNote(opts?.arcadeNote ?? null);
     setCompletedSession(result);
+    pushSoon();
   }, [abilityOrchestrator]);
 
   const handleBaselineComplete = useCallback((profile: BaselineProfile) => {
     const updated = completeBaselineAssessment(profile);
     setProgress(updated);
+    pushSoon();
   }, []);
 
   const handleCommitMinutes = useCallback((m: 2 | 5 | 10) => {
     setProgress(updateHabitPreferences({ dailyMinutesGoal: m }));
+    pushSoon();
   }, []);
 
   const handleSkipBaselineToWorkout = useCallback(() => {
@@ -252,13 +320,28 @@ export const App: React.FC = () => {
     setRunningWorkout(state);
     setPausedWorkout(state);
     saveActiveWorkout(state);
+    pushSoon();
   }, []);
 
   const handleSaveHabitPrefs = useCallback((partial: HabitPreferencesPartial) => {
     setProgress(updateHabitPreferences(partial));
-  }, []);
+    pushSoon();
+    // Web Push opt-in/out follows the same toggle as the in-app reminder —
+    // both are graceful no-ops when signed out / unsupported / unconfigured.
+    if ('reminderEnabled' in partial) {
+      if (partial.reminderEnabled) {
+        void subscribeWebPush(session?.user.id);
+      } else {
+        void unsubscribeWebPush();
+      }
+    }
+  }, [session]);
 
   const handleStartSet = (mode: SetMode) => {
+    if (mode === 'weekend_long' && !canAccessWeekendLong()) {
+      setIsUpgradeModalOpen(true);
+      return;
+    }
     const plan = buildDailyWorkoutPlan(mode, {
       excludeIds,
       date: getLocalDateString(),
@@ -445,6 +528,8 @@ export const App: React.FC = () => {
         setActiveTab={setActiveTab}
         onOpenWittChat={() => setIsWittChatOpen(true)}
         onOpenHistoryModal={() => setIsHistoryModalOpen(true)}
+        onOpenAccount={() => setIsAccountModalOpen(true)}
+        isSignedIn={Boolean(session)}
         hideBottomNav={inSession || needsBaseline}
       />
 
@@ -581,25 +666,29 @@ export const App: React.FC = () => {
                   onSaveHabitPrefs={handleSaveHabitPrefs}
                   onOpenGames={() => setActiveTab('arcade')}
                   difficultyTierLabel={difficultyTierLabel}
+                  isPremium={isPremium}
+                  onRequestUpgrade={() => setIsUpgradeModalOpen(true)}
                 />
               )}
 
               {activeTab === 'arcade' && (
-                <GamesArcade
+                <LazyGamesArcade
                   onLaunchGame={handleLaunchArcadeGame}
                   progress={progress}
+                  isPremium={isPremium}
+                  onRequestUpgrade={() => setIsUpgradeModalOpen(true)}
                 />
               )}
 
               {activeTab === 'skills' && (
-                <SkillCatalog
+                <LazySkillCatalog
                   progress={progress}
                   onStartSkillPractice={handleStartSkillPractice}
                 />
               )}
 
               {activeTab === 'progress' && (
-                <AnalyticsPage
+                <LazyAnalyticsPage
                   progress={progress}
                   sessionHistory={sessionHistory}
                   abilityTheta={abilityTheta}
@@ -615,7 +704,7 @@ export const App: React.FC = () => {
       </main>
 
       {completedSession && (
-        <SessionSummaryModal
+        <LazySessionSummaryModal
           session={completedSession}
           updatedProgress={progress}
           onClose={() => {
@@ -632,14 +721,15 @@ export const App: React.FC = () => {
       )}
 
       {isWittChatOpen && (
-        <WittChatModal
+        <LazyWittChatModal
           progress={progress}
+          isPremium={isPremium}
           onClose={() => setIsWittChatOpen(false)}
         />
       )}
 
       {isHistoryModalOpen && (
-        <SessionHistoryModal
+        <LazySessionHistoryModal
           history={sessionHistory}
           progress={progress}
           onClose={() => setIsHistoryModalOpen(false)}
@@ -657,7 +747,37 @@ export const App: React.FC = () => {
         />
       )}
 
-      <InstallPrompt earnedInstallPrompt={Boolean(progress.earnedInstallPrompt)} />
+      {isAccountModalOpen && (
+        <LazyAccountModal
+          session={session}
+          onClose={() => setIsAccountModalOpen(false)}
+          onDataImported={refreshFromStorage}
+          isPremium={isPremium}
+          onOpenUpgrade={() => {
+            setIsAccountModalOpen(false);
+            setIsUpgradeModalOpen(true);
+          }}
+        />
+      )}
+
+      {isUpgradeModalOpen && (
+        <LazyUpgradeModal
+          session={session}
+          isPremium={isPremium}
+          onClose={() => {
+            setIsUpgradeModalOpen(false);
+            setUpgradeModalFromCheckout(false);
+          }}
+          onOpenAccount={() => {
+            setIsUpgradeModalOpen(false);
+            setIsAccountModalOpen(true);
+          }}
+          showRefreshHint={upgradeModalFromCheckout}
+          onEntitlementRefreshed={setIsPremium}
+        />
+      )}
+
+      <LazyInstallPrompt earnedInstallPrompt={Boolean(progress.earnedInstallPrompt)} />
 
       <footer className="w-full border-t border-[var(--border-color)] py-6 text-center text-xs relative z-10" style={{ color: 'var(--text-muted)' }}>
         <p>© 2026 SENWITT — 5 minutes a day to keep your thinking sharp.</p>
