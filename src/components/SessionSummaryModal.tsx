@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
-  Zap, Flame, Award, Clock, CheckCircle2, ArrowRight, Lightbulb, ShieldCheck, Target, Anchor, Bell,
+  Zap, Flame, Award, Clock, CheckCircle2, ArrowRight, Lightbulb, ShieldCheck, Target, Anchor, Bell, Gauge,
 } from 'lucide-react';
 import type { SessionResult, UserProgress } from '../types';
 import type { HabitPreferencesPartial } from '../services/storage';
 import { buildSessionInsight, buildApplicationCue } from '../services/sessionInsights';
 import { playClickSound } from '../services/sound';
+import { describeSessionDifficulty, tierLabel } from '../services/difficultyFeel';
+import { requestReminderPermission, postReminderScheduleToSw } from '../services/reminderScheduler';
 
 const ANCHOR_OPTIONS = ['morning coffee', 'after lunch', 'end of workday', 'evening wind-down'] as const;
 
@@ -15,6 +17,10 @@ interface SessionSummaryModalProps {
   updatedProgress: UserProgress;
   onClose: () => void;
   onSaveHabitPrefs?: (partial: HabitPreferencesPartial) => void;
+  abilityBefore?: { theta: number };
+  abilityAfter?: { theta: number };
+  /** Honest note when arcade used elevated adaptive settings */
+  arcadeIntensityNote?: string | null;
 }
 
 export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
@@ -22,6 +28,9 @@ export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
   updatedProgress,
   onClose,
   onSaveHabitPrefs,
+  abilityBefore,
+  abilityAfter,
+  arcadeIntensityNote,
 }) => {
   const accuracyPct = Math.round((session.correctCount / Math.max(1, session.totalItems)) * 100);
   const insight = useMemo(
@@ -29,6 +38,10 @@ export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
     [session, updatedProgress],
   );
   const applicationCue = useMemo(() => buildApplicationCue(session), [session]);
+  const difficultyFeel = useMemo(() => {
+    if (abilityBefore == null || abilityAfter == null) return null;
+    return describeSessionDifficulty(abilityBefore.theta, abilityAfter.theta);
+  }, [abilityBefore, abilityAfter]);
   const earnedShield =
     updatedProgress.streakDays > 0 &&
     updatedProgress.streakDays % 7 === 0;
@@ -70,14 +83,9 @@ export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
   const handleEnableReminder = async () => {
     if (!onSaveHabitPrefs) return;
     playClickSound();
-    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-      try {
-        await Notification.requestPermission();
-      } catch {
-        // ignore
-      }
-    }
+    await requestReminderPermission();
     onSaveHabitPrefs({ reminderEnabled: true, reminderTime });
+    void postReminderScheduleToSw(reminderTime, true);
     setReminderSaved(true);
   };
 
@@ -135,6 +143,43 @@ export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
             <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Duration</span>
           </div>
         </div>
+
+        {difficultyFeel && (
+          <div
+            className="rounded-xl p-3 mb-4 flex items-start gap-3 text-left"
+            style={{ background: '#f0fdfa', border: '1px solid #99f6e4' }}
+          >
+            <Gauge className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--accent-teal)' }} />
+            <div className="min-w-0">
+              <span
+                className="text-[10px] uppercase font-extrabold block mb-0.5"
+                style={{ color: 'var(--accent-teal)' }}
+              >
+                Difficulty · {tierLabel(difficultyFeel.tierAfter)}
+              </span>
+              <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                {difficultyFeel.message}
+              </p>
+              {difficultyFeel.tierBefore !== difficultyFeel.tierAfter && (
+                <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', marginTop: 4 }}>
+                  Intensity band {difficultyFeel.tierBefore}/5 → {difficultyFeel.tierAfter}/5
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {arcadeIntensityNote && (
+          <div
+            className="rounded-xl p-3 mb-4 flex items-start gap-3 text-left"
+            style={{ background: '#fff7ed', border: '1px solid #fed7aa' }}
+          >
+            <Zap className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--accent-coral)' }} />
+            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              {arcadeIntensityNote}
+            </p>
+          </div>
+        )}
 
         <div
           className="rounded-xl p-3 mb-4 flex items-start gap-3 text-left"

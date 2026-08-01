@@ -1,6 +1,7 @@
 import React from 'react';
 import { PenTool, Calculator, Code2, Brain, BookOpen, Scale, Play, TrendingUp } from 'lucide-react';
 import type { UserProgress, SkillCategory } from '../types';
+import { skillLevelLabel } from '../services/difficultyFeel';
 
 interface SkillCatalogProps {
   progress: UserProgress;
@@ -121,7 +122,7 @@ export const SkillCatalog: React.FC<SkillCatalogProps> = ({ progress, onStartSki
               <div className="tile-body">
                 <div className="flex items-center justify-between mb-3 gap-2">
                   <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full ${meta.badgeClass}`}>
-                    Level {userSkill.level}
+                    Level {userSkill.level} · {skillLevelLabel(userSkill.level)}
                   </span>
                   <span className="tile-meta">{userSkill.totalReps} reps</span>
                 </div>

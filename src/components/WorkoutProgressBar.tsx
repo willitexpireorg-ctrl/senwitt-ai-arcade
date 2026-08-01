@@ -9,6 +9,8 @@ interface WorkoutProgressBarProps {
   onExit: () => void;
   /** Peak-end cue on the final step */
   isFinalStep: boolean;
+  /** Subtle adaptive intensity 1–5 */
+  intensityTier?: number | null;
 }
 
 /**
@@ -22,6 +24,7 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
   title,
   onExit,
   isFinalStep,
+  intensityTier = null,
 }) => {
   const total = Math.max(1, steps.length);
   const current = steps[stepIndex];
@@ -52,6 +55,11 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
               style={{ color: 'var(--text-muted)' }}
             >
               {title}
+              {intensityTier != null && intensityTier >= 1 && intensityTier <= 5 && (
+                <span style={{ color: 'var(--accent-teal)', marginLeft: 8 }}>
+                  · Intensity {intensityTier}/5
+                </span>
+              )}
             </p>
             <h1
               className="text-base sm:text-lg font-extrabold truncate"

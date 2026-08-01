@@ -10,6 +10,7 @@ import { computeMomentum } from '../services/sessionInsights';
 import { getLocalDateString, hasTrainedToday } from '../services/storage';
 import { peekDailyPlanPreview } from '../services/dailyWorkoutPlan';
 import { playClickSound } from '../services/sound';
+import { requestReminderPermission, postReminderScheduleToSw } from '../services/reminderScheduler';
 
 const ANCHOR_OPTIONS = ['morning coffee', 'after lunch', 'end of workday', 'evening wind-down'] as const;
 
@@ -23,6 +24,8 @@ interface DashboardProps {
   onDiscardWorkout?: () => void;
   onSaveHabitPrefs?: (partial: HabitPreferencesPartial) => void;
   onOpenGames?: () => void;
+  /** Current adaptive difficulty tier label (e.g. Challenging) */
+  difficultyTierLabel?: string | null;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -35,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDiscardWorkout,
   onSaveHabitPrefs,
   onOpenGames,
+  difficultyTierLabel = null,
 }) => {
   const xpPercent = Math.min(100, ((progress.sharpnessScore - 300) / 700) * 100);
   const ringSize = 112;
@@ -119,12 +123,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const saveHabitCues = async () => {
     if (!onSaveHabitPrefs) return;
     playClickSound();
-    if (reminderOnDraft && typeof Notification !== 'undefined' && Notification.permission === 'default') {
-      try {
-        await Notification.requestPermission();
-      } catch {
-        // ignore
-      }
+    if (reminderOnDraft) {
+      await requestReminderPermission();
+      void postReminderScheduleToSw(reminderTimeDraft, true);
+    } else {
+      void postReminderScheduleToSw(reminderTimeDraft, false);
     }
     onSaveHabitPrefs({
       habitAnchor: habitAnchorDraft.trim() || null,
@@ -270,6 +273,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="training-card__desc">
                   A mixed ~{dailyPreview.estimatedMinutes}-minute session — short quizzes plus interactive drills.
                 </p>
+                {difficultyTierLabel && (
+                  <span
+                    className="inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-extrabold mt-2"
+                    style={{
+                      background: '#ccfbf1',
+                      color: 'var(--accent-teal)',
+                      border: '1px solid #99f6e4',
+                    }}
+                  >
+                    Difficulty · {difficultyTierLabel}
+                  </span>
+                )}
 
                 <div
                   className="flex flex-wrap gap-1.5 mt-3 mb-1"

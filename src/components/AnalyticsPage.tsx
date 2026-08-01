@@ -5,11 +5,20 @@ import { SharpnessGauge } from './SharpnessGauge';
 import { CognitiveRadarChart } from './CognitiveRadarChart';
 import { getLocalDateString, hasTrainedToday } from '../services/storage';
 import { buildWeeklyReport, last7DayActivity, computeMomentum } from '../services/sessionInsights';
+import {
+  tierFromTheta,
+  tierLabel,
+  trainingIntensityBlurb,
+  skillLevelLabel,
+  type DifficultyTier,
+} from '../services/difficultyFeel';
 
 interface AnalyticsPageProps {
   progress: UserProgress;
   sessionHistory: SessionResult[];
   onStartDaily?: () => void;
+  /** Latent ability theta for intensity band (not shown raw). */
+  abilityTheta?: number;
 }
 
 const BELT_THRESHOLDS = [
@@ -23,7 +32,12 @@ const BELT_THRESHOLDS = [
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ progress, sessionHistory, onStartDaily }) => {
+export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
+  progress,
+  sessionHistory,
+  onStartDaily,
+  abilityTheta = 0,
+}) => {
   const categories: SkillCategory[] = ['writing', 'math', 'code', 'memory', 'reading', 'reasoning'];
   const today = getLocalDateString();
   const week = useMemo(() => buildWeeklyReport(progress, sessionHistory, today), [progress, sessionHistory, today]);
@@ -31,6 +45,8 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ progress, sessionH
   const habitDays = useMemo(() => last7DayActivity(sessionHistory, today), [sessionHistory, today]);
   const recentSessions = sessionHistory.slice(0, 7);
   const trainedToday = hasTrainedToday(progress, today);
+  const intensityTier: DifficultyTier = tierFromTheta(abilityTheta);
+  const intensityCopy = trainingIntensityBlurb(intensityTier);
 
   const historyPoints = progress.sharpnessHistory.slice(-30);
   const minScore = historyPoints.length ? Math.min(...historyPoints.map((h) => h.score), 300) : 300;
@@ -79,6 +95,39 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ progress, sessionH
           </button>
         </div>
       )}
+
+      <div
+        className="surface p-5 mb-6 animate-fadeInUp"
+        style={{ background: '#f0fdfa', border: '1px solid #99f6e4' }}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: '#ccfbf1', color: 'var(--accent-teal)' }}
+          >
+            <Gauge className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 text-left">
+            <span
+              style={{
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                fontWeight: 800,
+                color: 'var(--accent-teal)',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Training intensity
+            </span>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2 }}>
+              {tierLabel(intensityTier)} · Intensity band {intensityTier}/5
+            </h3>
+            <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.45 }}>
+              {intensityCopy}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8 stagger-children w-full">
         <div className="surface p-6 flex flex-col items-center justify-center text-center animate-fadeInUp">
@@ -276,7 +325,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ progress, sessionH
                     />
                   </div>
                   <div className="flex justify-between text-[11px] font-semibold gap-2 flex-wrap" style={{ color: 'var(--text-muted)' }}>
-                    <span>Level {skill.level} · {skill.score} pts</span>
+                    <span>Level {skill.level} · {skillLevelLabel(skill.level)} · {skill.score} pts</span>
                     <span>{skill.totalReps} reps</span>
                   </div>
                 </div>

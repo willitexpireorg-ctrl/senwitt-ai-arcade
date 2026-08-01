@@ -25,7 +25,9 @@ export interface GameSpec {
     | 'rsvp_reader'
     | 'speed_match'
     | 'signal_sweep'
-    | 'pattern_shift';
+    | 'pattern_shift'
+    | 'synonym_race'
+    | 'tone_pick';
 }
 
 // A small, curated set of mini-games that actually work: four live interactive
@@ -197,6 +199,28 @@ export class ResearchAgent {
         difficultyRange: 'Tier 1-5',
         estimatedDuration: '2 Mins',
         mechanicType: 'pattern_shift',
+      },
+      {
+        id: 'game-synonym-race',
+        title: 'Synonym Race',
+        category: 'writing',
+        description: 'See a prompt word and race to pick the closest synonym before the round clock hits zero.',
+        scientificRationale: 'Practices rapid lexical selection — the same word-choice reflex used when tightening prose under time pressure.',
+        neuralTarget: 'Lexical Fluency',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'synonym_race',
+      },
+      {
+        id: 'game-tone-pick',
+        title: 'Tone Pick',
+        category: 'writing',
+        description: 'Read a workplace situation and choose the reply tone that best matches the stated goal.',
+        scientificRationale: 'Builds pragmatic tone matching — professional, warm, or direct — against a clear communicative goal.',
+        neuralTarget: 'Pragmatic Communication',
+        difficultyRange: 'Tier 1-5',
+        estimatedDuration: '2 Mins',
+        mechanicType: 'tone_pick',
       },
       {
         id: 'game-writing-quiz',

@@ -2,21 +2,26 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { ExercisePlayer } from './ExercisePlayer';
 import { WorkoutProgressBar } from './WorkoutProgressBar';
-import { StroopDrill } from './StroopDrill';
-import { BriefRecallDrill } from './engines/BriefRecallDrill';
-import { ClearerSentenceDrill } from './engines/ClearerSentenceDrill';
-import { NumberSenseDrill } from './engines/NumberSenseDrill';
-import { BrevityCutDrill } from './engines/BrevityCutDrill';
-import { QuickPurchaseDrill } from './engines/QuickPurchaseDrill';
-import { SequenceOrderDrill } from './engines/SequenceOrderDrill';
-import { RsvpReaderDrill } from './engines/RsvpReaderDrill';
-import { SpeedMatchDrill } from './engines/SpeedMatchDrill';
-import { SignalSweepDrill } from './engines/SignalSweepDrill';
-import { PatternShiftDrill } from './engines/PatternShiftDrill';
+import {
+  LazyBriefRecallDrill,
+  LazyClearerSentenceDrill,
+  LazyNumberSenseDrill,
+  LazyBrevityCutDrill,
+  LazyQuickPurchaseDrill,
+  LazySequenceOrderDrill,
+  LazyRsvpReaderDrill,
+  LazySpeedMatchDrill,
+  LazySignalSweepDrill,
+  LazyPatternShiftDrill,
+  LazySynonymRaceDrill,
+  LazyTonePickDrill,
+  LazyStroopDrill,
+} from './engines/lazyEngines';
 import type { AttemptResult, SessionResult, SkillCategory } from '../types';
 import type { DailyWorkoutPlan, WorkoutEngineMechanic } from '../services/dailyWorkoutPlan';
 import { getLocalDateString } from '../services/storage';
 import { playCorrectSound } from '../services/sound';
+import { tierFromTheta } from '../services/difficultyFeel';
 
 type EngineResult = {
   scoreEarned: number;
@@ -32,6 +37,8 @@ interface WorkoutRunnerProps {
   onComplete: (session: SessionResult) => void;
   onCancel: () => void;
   onProgress?: (state: { stepIndex: number; attempts: AttemptResult[] }) => void;
+  /** Ability theta for subtle intensity chip */
+  abilityTheta?: number;
 }
 
 const engineResultToAttempts = (
@@ -80,6 +87,13 @@ const buildSession = (
   };
 };
 
+/** Deterministic intensity from plan date seed when theta unavailable. */
+const intensityFromPlanDate = (date: string): number => {
+  let h = 0;
+  for (let i = 0; i < date.length; i++) h = (h + date.charCodeAt(i) * (i + 1)) % 97;
+  return (h % 5) + 1;
+};
+
 export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
   plan,
   initialStepIndex = 0,
@@ -87,6 +101,7 @@ export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
   onComplete,
   onCancel,
   onProgress,
+  abilityTheta,
 }) => {
   const clampedStart = Math.max(
     0,
@@ -107,6 +122,11 @@ export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
   onCompleteRef.current = onComplete;
   const onProgressRef = useRef(onProgress);
   onProgressRef.current = onProgress;
+
+  const intensityTier =
+    abilityTheta !== undefined
+      ? tierFromTheta(abilityTheta)
+      : intensityFromPlanDate(plan.date);
 
   useEffect(() => {
     return () => {
@@ -143,12 +163,10 @@ export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
       attemptsRef.current = newAttempts;
 
       if (nextIndex >= plan.steps.length) {
-        // Do not persist stepIndex past the end — completion clears active workout.
         finalize(newAttempts);
         return;
       }
 
-      // Inter-step celebration (Peak-End / Tiny Habits celebration) — not after last.
       const prefersReduced =
         typeof window !== 'undefined' &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -166,7 +184,6 @@ export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
     [plan.steps.length, finalize, commitAdvance],
   );
 
-  // Empty plan or resume past the end → single SessionResult, no blank screen.
   useEffect(() => {
     if (finalizedRef.current) return;
     if (plan.steps.length === 0) {
@@ -213,27 +230,31 @@ export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
 
     switch (mechanic) {
       case 'brevity_cut':
-        return <BrevityCutDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyBrevityCutDrill onComplete={onDone} onCancel={onCancel} />;
       case 'quick_purchase':
-        return <QuickPurchaseDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyQuickPurchaseDrill onComplete={onDone} onCancel={onCancel} />;
       case 'sequence_order':
-        return <SequenceOrderDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazySequenceOrderDrill onComplete={onDone} onCancel={onCancel} />;
       case 'rsvp_reader':
-        return <RsvpReaderDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyRsvpReaderDrill onComplete={onDone} onCancel={onCancel} />;
       case 'speed_match':
-        return <SpeedMatchDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazySpeedMatchDrill onComplete={onDone} onCancel={onCancel} />;
       case 'signal_sweep':
-        return <SignalSweepDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazySignalSweepDrill onComplete={onDone} onCancel={onCancel} />;
       case 'pattern_shift':
-        return <PatternShiftDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyPatternShiftDrill onComplete={onDone} onCancel={onCancel} />;
       case 'brief_recall':
-        return <BriefRecallDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyBriefRecallDrill onComplete={onDone} onCancel={onCancel} />;
       case 'clearer_sentence':
-        return <ClearerSentenceDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyClearerSentenceDrill onComplete={onDone} onCancel={onCancel} />;
       case 'number_sense':
-        return <NumberSenseDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyNumberSenseDrill onComplete={onDone} onCancel={onCancel} />;
       case 'stroop':
-        return <StroopDrill onComplete={onDone} onCancel={onCancel} />;
+        return <LazyStroopDrill onComplete={onDone} onCancel={onCancel} />;
+      case 'synonym_race':
+        return <LazySynonymRaceDrill onComplete={onDone} onCancel={onCancel} />;
+      case 'tone_pick':
+        return <LazyTonePickDrill onComplete={onDone} onCancel={onCancel} />;
       default:
         return (
           <div className="page-shell py-10 flex flex-col items-center gap-4 text-center">
@@ -256,6 +277,7 @@ export const WorkoutRunner: React.FC<WorkoutRunnerProps> = ({
         title={plan.title}
         onExit={onCancel}
         isFinalStep={isFinalStep}
+        intensityTier={intensityTier}
       />
 
       <div className="flex-1" key={step.id}>

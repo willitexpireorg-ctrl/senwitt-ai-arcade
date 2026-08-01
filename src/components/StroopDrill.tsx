@@ -158,6 +158,12 @@ export const StroopDrill: React.FC<StroopDrillProps> = ({ onComplete, onCancel, 
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <div
+            className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1.5 rounded-xl"
+            style={{ background: '#e0f2fe', border: '1px solid #bae6fd', color: '#0369a1' }}
+          >
+            Level cue · {trialCount} trials
+          </div>
+          <div
             className="flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-2 rounded-2xl"
             style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c' }}
           >

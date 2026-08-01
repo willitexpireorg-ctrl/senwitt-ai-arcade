@@ -22,7 +22,9 @@ export type EvidenceKey =
   | 'rsvp_reader'
   | 'speed_match'
   | 'signal_sweep'
-  | 'pattern_shift';
+  | 'pattern_shift'
+  | 'synonym_race'
+  | 'tone_pick';
 
 export const EXERCISE_EVIDENCE: Record<EvidenceKey, EvidenceCard> = {
   writing: {
@@ -104,5 +106,15 @@ export const EXERCISE_EVIDENCE: Record<EvidenceKey, EvidenceCard> = {
     practises: 'Sorting by one rule, then switching to another when the cue changes.',
     explanation: 'Task switching is the flexibility you use when priorities flip mid-meeting or mid-checklist.',
     boundary: 'A few rule flips don\u2019t measure general intelligence — they rehearse updating the active rule under mild pressure.',
+  },
+  synonym_race: {
+    practises: 'Picking the closest synonym under a short round timer.',
+    explanation: 'Quick word-choice under light pressure is the same reflex you use when tightening a sentence before you send it.',
+    boundary: 'A synonym race isn\u2019t a vocabulary exam or IQ score — it only reflects pace and accuracy on these prompts.',
+  },
+  tone_pick: {
+    practises: 'Matching message tone (professional, warm, or direct) to a stated workplace goal.',
+    explanation: 'Tone fit is what keeps a Slack or email from landing colder or sharper than you meant.',
+    boundary: 'A handful of scenarios won\u2019t teach full communication strategy — it rehearses reading the goal before you pick the voice.',
   },
 };

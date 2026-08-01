@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Bell, Play } from 'lucide-react';
 import type { UserProgress } from '../types';
 import { getLocalDateString } from '../services/storage';
+import { notifyDailyReadyIfDue } from '../services/reminderScheduler';
 
 interface DailyReminderBannerProps {
   progress: UserProgress;
@@ -44,7 +45,6 @@ export const DailyReminderBanner: React.FC<DailyReminderBannerProps> = ({
 }) => {
   const today = getLocalDateString();
   const markedRef = useRef(false);
-  const notifiedRef = useRef(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -73,28 +73,12 @@ export const DailyReminderBanner: React.FC<DailyReminderBannerProps> = ({
     setVisible(true);
     writeSessionFlag(today);
 
+    // Notify before persisting last-shown so the day mark cannot race-block the OS notify.
+    notifyDailyReadyIfDue(progress, trainedToday);
+
     if (!alreadyMarkedToday && !markedRef.current) {
       markedRef.current = true;
       onMarkShown();
-    }
-
-    if (
-      !notifiedRef.current &&
-      !alreadyMarkedToday &&
-      typeof Notification !== 'undefined' &&
-      Notification.permission === 'granted' &&
-      typeof document !== 'undefined' &&
-      document.visibilityState === 'visible'
-    ) {
-      notifiedRef.current = true;
-      try {
-        new Notification("Today's set is ready", {
-          body: 'A few minutes keeps your thinking sharp.',
-          tag: `senwitt-daily-${today}`,
-        });
-      } catch {
-        // ignore unsupported Notification constructors
-      }
     }
   }, [
     trainedToday,
@@ -103,6 +87,7 @@ export const DailyReminderBanner: React.FC<DailyReminderBannerProps> = ({
     progress.reminderLastShownDate,
     today,
     onMarkShown,
+    progress,
   ]);
 
   if (!visible || trainedToday) return null;

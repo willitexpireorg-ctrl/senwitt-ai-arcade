@@ -19,7 +19,9 @@ export type WorkoutEngineMechanic =
   | 'brief_recall'
   | 'clearer_sentence'
   | 'number_sense'
-  | 'stroop';
+  | 'stroop'
+  | 'synonym_race'
+  | 'tone_pick';
 
 export type WorkoutStep =
   | { id: string; kind: 'quiz'; label: string; item: ExerciseItem }
@@ -45,6 +47,8 @@ export const ENGINE_LABELS: Record<WorkoutEngineMechanic, string> = {
   clearer_sentence: 'Clearer Sentence',
   number_sense: 'Number Sense',
   stroop: 'Stroop',
+  synonym_race: 'Synonym Race',
+  tone_pick: 'Tone Pick',
 };
 
 const ENGINE_CATEGORY: Record<WorkoutEngineMechanic, SkillCategory> = {
@@ -59,6 +63,8 @@ const ENGINE_CATEGORY: Record<WorkoutEngineMechanic, SkillCategory> = {
   clearer_sentence: 'writing',
   number_sense: 'math',
   stroop: 'reasoning',
+  synonym_race: 'writing',
+  tone_pick: 'writing',
 };
 
 const ALL_ENGINES: WorkoutEngineMechanic[] = [
@@ -73,6 +79,8 @@ const ALL_ENGINES: WorkoutEngineMechanic[] = [
   'clearer_sentence',
   'number_sense',
   'stroop',
+  'synonym_race',
+  'tone_pick',
 ];
 
 const BASELINE_TO_SKILL: Record<BaselinePriority, SkillCategory> = {

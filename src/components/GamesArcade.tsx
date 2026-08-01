@@ -3,7 +3,7 @@ import {
   Gamepad2, Play, Target, Clock, LayoutGrid, Layers, Palette,
   Scale, Mic, PenLine, Calculator, Code2, BookSearch, Brain,
   FileText, MessageSquareText, Percent, Scissors, ShoppingCart, ListOrdered, Zap,
-  GitCompare, ScanSearch, Shuffle, Sparkles,
+  GitCompare, ScanSearch, Shuffle, Sparkles, BookA, MessageCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { ResearchAgent } from '../services/researchAgent';
@@ -182,6 +182,16 @@ const GAME_VISUALS: Record<string, { icon: LucideIcon; artClass: string; label: 
     artClass: 'tile-art--mint',
     label: 'Pattern Shift shuffle icon',
   },
+  'game-synonym-race': {
+    icon: BookA,
+    artClass: 'tile-art--sky',
+    label: 'Synonym Race book icon',
+  },
+  'game-tone-pick': {
+    icon: MessageCircle,
+    artClass: 'tile-art--rose',
+    label: 'Tone Pick message icon',
+  },
   'game-writing-quiz': {
     icon: PenLine,
     artClass: 'tile-art--sky',
@@ -220,6 +230,7 @@ const LIVE_MECHANIC_TYPES = new Set([
   'brief_recall', 'clearer_sentence', 'number_sense',
   'brevity_cut', 'quick_purchase', 'sequence_order', 'rsvp_reader',
   'speed_match', 'signal_sweep', 'pattern_shift',
+  'synonym_race', 'tone_pick',
 ]);
 
 const CATEGORIES = [

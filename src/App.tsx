@@ -4,29 +4,33 @@ import { Dashboard } from './components/Dashboard';
 import { SkillCatalog } from './components/SkillCatalog';
 import { AnalyticsPage } from './components/AnalyticsPage';
 import { ExercisePlayer } from './components/ExercisePlayer';
-import { SpatialMemoryGame } from './components/SpatialMemoryGame';
 import { GamesArcade } from './components/GamesArcade';
 import { SessionSummaryModal } from './components/SessionSummaryModal';
 import { WittChatModal } from './components/WittChatModal';
 import { SessionHistoryModal } from './components/SessionHistoryModal';
-import { VoiceFluencyDrill } from './components/VoiceFluencyDrill';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { DualNBackGame } from './components/DualNBackGame';
-import { StroopDrill } from './components/StroopDrill';
-import { LogicInferenceDrill } from './components/LogicInferenceDrill';
 import { InstallPrompt } from './components/InstallPrompt';
-import { BaselineAssessment } from './components/BaselineAssessment';
-import { BriefRecallDrill } from './components/engines/BriefRecallDrill';
-import { ClearerSentenceDrill } from './components/engines/ClearerSentenceDrill';
-import { NumberSenseDrill } from './components/engines/NumberSenseDrill';
-import { BrevityCutDrill } from './components/engines/BrevityCutDrill';
-import { QuickPurchaseDrill } from './components/engines/QuickPurchaseDrill';
-import { SequenceOrderDrill } from './components/engines/SequenceOrderDrill';
-import { RsvpReaderDrill } from './components/engines/RsvpReaderDrill';
-import { SpeedMatchDrill } from './components/engines/SpeedMatchDrill';
-import { SignalSweepDrill } from './components/engines/SignalSweepDrill';
-import { PatternShiftDrill } from './components/engines/PatternShiftDrill';
 import { WorkoutRunner } from './components/WorkoutRunner';
+import {
+  LazyBriefRecallDrill,
+  LazyClearerSentenceDrill,
+  LazyNumberSenseDrill,
+  LazyBrevityCutDrill,
+  LazyQuickPurchaseDrill,
+  LazySequenceOrderDrill,
+  LazyRsvpReaderDrill,
+  LazySpeedMatchDrill,
+  LazySignalSweepDrill,
+  LazyPatternShiftDrill,
+  LazySynonymRaceDrill,
+  LazyTonePickDrill,
+  LazyDualNBackGame,
+  LazySpatialMemoryGame,
+  LazyStroopDrill,
+  LazyLogicInferenceDrill,
+  LazyVoiceFluencyDrill,
+  LazyBaselineAssessment,
+} from './components/engines/lazyEngines';
 import type { UserProgress, SessionResult, SetMode, SkillCategory, AttemptResult, BaselineProfile } from './types';
 import {
   getStoredProgress,
@@ -42,6 +46,7 @@ import {
   updateHabitPreferences,
   markInstallPromptEarned,
   deferBaselineWithDefaults,
+  hasTrainedToday,
   type ActiveWorkoutState,
   type HabitPreferencesPartial,
 } from './services/storage';
@@ -49,6 +54,31 @@ import { buildDailyWorkoutPlan } from './services/dailyWorkoutPlan';
 import { EXERCISE_BANK, getSkillPracticeSet } from './data/exerciseBank';
 import type { GameSpec } from './services/researchAgent';
 import { Phase2MultiAgentOrchestrator } from './services/phase2Orchestrator';
+import { tierFromTheta, tierLabel } from './services/difficultyFeel';
+import {
+  scheduleReminderCheck,
+  notifyDailyReadyIfDue,
+  postReminderScheduleToSw,
+} from './services/reminderScheduler';
+
+type ArcadeMode =
+  | 'spatial'
+  | 'dual_nback'
+  | 'stroop'
+  | 'logic_deduction'
+  | 'brief_recall'
+  | 'clearer_sentence'
+  | 'number_sense'
+  | 'brevity_cut'
+  | 'quick_purchase'
+  | 'sequence_order'
+  | 'rsvp_reader'
+  | 'speed_match'
+  | 'signal_sweep'
+  | 'pattern_shift'
+  | 'synonym_race'
+  | 'tone_pick'
+  | null;
 
 const ARCADE_SKILL: Record<string, SkillCategory> = {
   spatial: 'memory',
@@ -66,6 +96,8 @@ const ARCADE_SKILL: Record<string, SkillCategory> = {
   speed_match: 'reasoning',
   signal_sweep: 'reasoning',
   pattern_shift: 'reasoning',
+  synonym_race: 'writing',
+  tone_pick: 'writing',
 };
 
 const recentItemIds = (history: SessionResult[], limit = 80): string[] => {
@@ -79,42 +111,43 @@ const recentItemIds = (history: SessionResult[], limit = 80): string[] => {
   return ids;
 };
 
+const arcadeIntensityNote = (
+  modeName: string,
+  opts: { spatialGridSize: number; nBackLevel: number; stroopTrialCount: number },
+): string | null => {
+  if (modeName === 'spatial' && opts.spatialGridSize >= 4) {
+    return 'Arcade used a larger 4×4 grid — a higher spatial setting based on your memory level.';
+  }
+  if (modeName === 'dual_nback' && opts.nBackLevel >= 2) {
+    return `Arcade ran Dual ${opts.nBackLevel}-Back — a higher working-memory setting from your recent level.`;
+  }
+  if (modeName === 'stroop' && opts.stroopTrialCount > 10) {
+    return `Arcade used ${opts.stroopTrialCount} Stroop trials — a longer set from your reasoning level.`;
+  }
+  return null;
+};
+
 export const App: React.FC = () => {
   const [progress, setProgress] = useState<UserProgress>(getStoredProgress);
   const [sessionHistory, setSessionHistory] = useState<SessionResult[]>(getSessionHistory);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [abilityTheta, setAbilityTheta] = useState(() => getStoredAbilityProfile().theta);
 
   const abilityOrchestrator = useMemo(
     () => new Phase2MultiAgentOrchestrator(getStoredAbilityProfile()),
     [],
   );
 
-  /** Skill-practice MCQ path (unchanged) — separate from mixed daily workouts. */
   const [activeSessionMode, setActiveSessionMode] = useState<SetMode | null>(null);
   const [activeSessionItems, setActiveSessionItems] = useState<ReturnType<typeof getSkillPracticeSet>>([]);
-  /** Currently running fullscreen workout (null until Start / Continue). */
   const [runningWorkout, setRunningWorkout] = useState<ActiveWorkoutState | null>(null);
-  /** Persisted open-loop workout for Dashboard Continue CTA (not auto-fullscreen). */
   const [pausedWorkout, setPausedWorkout] = useState<ActiveWorkoutState | null>(() => getActiveWorkout());
-  const [activeGameMode, setActiveGameMode] = useState<
-    | 'spatial'
-    | 'dual_nback'
-    | 'stroop'
-    | 'logic_deduction'
-    | 'brief_recall'
-    | 'clearer_sentence'
-    | 'number_sense'
-    | 'brevity_cut'
-    | 'quick_purchase'
-    | 'sequence_order'
-    | 'rsvp_reader'
-    | 'speed_match'
-    | 'signal_sweep'
-    | 'pattern_shift'
-    | null
-  >(null);
+  const [activeGameMode, setActiveGameMode] = useState<ArcadeMode>(null);
 
   const [completedSession, setCompletedSession] = useState<SessionResult | null>(null);
+  const [sessionAbilityBefore, setSessionAbilityBefore] = useState<{ theta: number } | null>(null);
+  const [sessionAbilityAfter, setSessionAbilityAfter] = useState<{ theta: number } | null>(null);
+  const [sessionArcadeNote, setSessionArcadeNote] = useState<string | null>(null);
   const [isWittChatOpen, setIsWittChatOpen] = useState<boolean>(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
   const [isVoiceDrillOpen, setIsVoiceDrillOpen] = useState<boolean>(false);
@@ -122,9 +155,26 @@ export const App: React.FC = () => {
   useEffect(() => {
     setProgress(getStoredProgress());
     setSessionHistory(getSessionHistory());
-    // Load paused workout for Dashboard continue CTA — do not auto-fullscreen resume.
     setPausedWorkout(getActiveWorkout());
+    setAbilityTheta(getStoredAbilityProfile().theta);
   }, []);
+
+  // Daily reminder polling while app is open (Page Visibility + 60s interval).
+  useEffect(() => {
+    return scheduleReminderCheck(() => {
+      const p = getStoredProgress();
+      notifyDailyReadyIfDue(p, hasTrainedToday(p));
+    });
+  }, []);
+
+  // Keep SW in sync when reminder prefs change (including disable).
+  useEffect(() => {
+    if (progress.reminderEnabled && progress.reminderTime) {
+      void postReminderScheduleToSw(progress.reminderTime, true);
+    } else {
+      void postReminderScheduleToSw(progress.reminderTime ?? '09:00', false);
+    }
+  }, [progress.reminderEnabled, progress.reminderTime]);
 
   const excludeIds = useMemo(() => recentItemIds(sessionHistory), [sessionHistory]);
 
@@ -134,15 +184,20 @@ export const App: React.FC = () => {
   const nBackLevel = Math.min(3, Math.max(1, Math.floor((memoryLevel + 1) / 2)));
   const stroopTrialCount = Math.min(16, 10 + Math.floor(reasoningLevel / 2));
   const stroopFeedbackMs = Math.max(280, 450 - (reasoningLevel - 1) * 30);
+  const difficultyTier = tierFromTheta(abilityTheta);
+  const difficultyTierLabel = tierLabel(difficultyTier);
 
   const runningWorkoutRef = useRef<ActiveWorkoutState | null>(null);
   runningWorkoutRef.current = runningWorkout;
 
-  const handleCompleteSession = useCallback((result: SessionResult) => {
+  const handleCompleteSession = useCallback((result: SessionResult, opts?: { arcadeNote?: string | null }) => {
+    const before = { theta: abilityOrchestrator.getAbilityProfile().theta };
     result.attempts.forEach((att) => {
       abilityOrchestrator.processRepResult(att.isCorrect, att.timeSpentMs);
     });
-    saveAbilityProfile(abilityOrchestrator.getAbilityProfile());
+    const afterProfile = abilityOrchestrator.getAbilityProfile();
+    saveAbilityProfile(afterProfile);
+    setAbilityTheta(afterProfile.theta);
 
     let updated = recordSessionCompletion(result);
     if (!updated.earnedInstallPrompt) {
@@ -152,14 +207,15 @@ export const App: React.FC = () => {
     setSessionHistory(getSessionHistory());
     setActiveSessionMode(null);
     setActiveSessionItems([]);
-    // Only clear paused daily workout when the mixed WorkoutRunner finishes.
-    // Arcade / skill-practice completion must not wipe an open-loop daily set.
     const completedMixedWorkout = Boolean(runningWorkoutRef.current);
     setRunningWorkout(null);
     if (completedMixedWorkout) {
       setPausedWorkout(null);
       clearActiveWorkout();
     }
+    setSessionAbilityBefore(before);
+    setSessionAbilityAfter({ theta: afterProfile.theta });
+    setSessionArcadeNote(opts?.arcadeNote ?? null);
     setCompletedSession(result);
   }, [abilityOrchestrator]);
 
@@ -186,7 +242,6 @@ export const App: React.FC = () => {
       attempts: [],
       startedAt: new Date().toISOString(),
     };
-    // Batch progress + workout in the same event so we don't flash the dashboard.
     setProgress(updated);
     setRunningWorkout(state);
     setPausedWorkout(state);
@@ -255,58 +310,42 @@ export const App: React.FC = () => {
     setActiveSessionItems(getSkillPracticeSet(skill, 3, EXERCISE_BANK, { excludeIds }));
     setActiveSessionMode('coffee_break');
     setActiveGameMode(null);
-    // Keep paused workout in storage; skill practice is a side path.
   };
 
   const handleLaunchArcadeGame = (game: GameSpec) => {
-    if (game.mechanicType === 'visual_grid') {
-      setActiveGameMode('spatial');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'dual_nback') {
-      setActiveGameMode('dual_nback');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'stroop') {
-      setActiveGameMode('stroop');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'logic_deduction') {
-      setActiveGameMode('logic_deduction');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'brief_recall') {
-      setActiveGameMode('brief_recall');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'clearer_sentence') {
-      setActiveGameMode('clearer_sentence');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'number_sense') {
-      setActiveGameMode('number_sense');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'brevity_cut') {
-      setActiveGameMode('brevity_cut');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'quick_purchase') {
-      setActiveGameMode('quick_purchase');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'sequence_order') {
-      setActiveGameMode('sequence_order');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'rsvp_reader') {
-      setActiveGameMode('rsvp_reader');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'speed_match') {
-      setActiveGameMode('speed_match');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'signal_sweep') {
-      setActiveGameMode('signal_sweep');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'pattern_shift') {
-      setActiveGameMode('pattern_shift');
-      setActiveSessionMode(null);
-    } else if (game.mechanicType === 'voice_drill') {
+    const mechanicToMode: Partial<Record<GameSpec['mechanicType'], ArcadeMode>> = {
+      visual_grid: 'spatial',
+      dual_nback: 'dual_nback',
+      stroop: 'stroop',
+      logic_deduction: 'logic_deduction',
+      brief_recall: 'brief_recall',
+      clearer_sentence: 'clearer_sentence',
+      number_sense: 'number_sense',
+      brevity_cut: 'brevity_cut',
+      quick_purchase: 'quick_purchase',
+      sequence_order: 'sequence_order',
+      rsvp_reader: 'rsvp_reader',
+      speed_match: 'speed_match',
+      signal_sweep: 'signal_sweep',
+      pattern_shift: 'pattern_shift',
+      synonym_race: 'synonym_race',
+      tone_pick: 'tone_pick',
+    };
+
+    if (game.mechanicType === 'voice_drill') {
       setIsVoiceDrillOpen(true);
-    } else {
-      setActiveSessionItems(getSkillPracticeSet(game.category, 3, EXERCISE_BANK, { excludeIds }));
-      setActiveSessionMode('coffee_break');
+      return;
     }
+
+    const mode = mechanicToMode[game.mechanicType];
+    if (mode) {
+      setActiveGameMode(mode);
+      setActiveSessionMode(null);
+      return;
+    }
+
+    setActiveSessionItems(getSkillPracticeSet(game.category, 3, EXERCISE_BANK, { excludeIds }));
+    setActiveSessionMode('coffee_break');
   };
 
   const handleCustomGameComplete = (
@@ -341,7 +380,8 @@ export const App: React.FC = () => {
       finalSharpness: 0,
       attempts,
     };
-    handleCompleteSession(session);
+    const note = arcadeIntensityNote(modeName, { spatialGridSize, nBackLevel, stroopTrialCount });
+    handleCompleteSession(session, { arcadeNote: note });
   };
 
   const handleVoiceComplete = (result: {
@@ -355,17 +395,12 @@ export const App: React.FC = () => {
     handleCustomGameComplete(result, 'voice');
   };
 
-  /** Arcade / skill-practice cancel — does not wipe a paused daily workout. */
   const handleCancelSession = () => {
     setActiveSessionMode(null);
     setActiveSessionItems([]);
     setActiveGameMode(null);
   };
 
-  /**
-   * Workout Exit: leave the open loop in storage (Zeigarnik) so Dashboard can
-   * offer Continue. "Start over" on Dashboard is the explicit discard path.
-   */
   const handleCancelWorkout = () => {
     setRunningWorkout((prev) => {
       if (prev) {
@@ -376,7 +411,6 @@ export const App: React.FC = () => {
     });
   };
 
-  /** Fullscreen runner only after explicit Start / Continue — not on mount. */
   const workoutRunning =
     Boolean(runningWorkout) &&
     !activeGameMode &&
@@ -388,7 +422,6 @@ export const App: React.FC = () => {
   );
   const needsBaseline = !progress.baselineCompleted;
 
-  /** Dashboard CTA: paused open-loop workout for today (Zeigarnik). */
   const dashboardActiveWorkout =
     pausedWorkout &&
     pausedWorkout.stepIndex < pausedWorkout.plan.steps.length &&
@@ -410,83 +443,93 @@ export const App: React.FC = () => {
       <main className="flex-1 w-full pb-[calc(var(--bottom-nav-height)+1.25rem)] lg:pb-16 relative z-10">
         <ErrorBoundary>
           {needsBaseline ? (
-            <BaselineAssessment
+            <LazyBaselineAssessment
               onComplete={handleBaselineComplete}
               onCommitMinutes={handleCommitMinutes}
               onSkipToWorkout={handleSkipBaselineToWorkout}
             />
           ) : activeGameMode === 'spatial' ? (
-            <SpatialMemoryGame
+            <LazySpatialMemoryGame
               gridSize={spatialGridSize}
               onComplete={(s) => handleCustomGameComplete(s, 'spatial')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'dual_nback' ? (
-            <DualNBackGame
+            <LazyDualNBackGame
               nLevel={nBackLevel}
               onComplete={(s) => handleCustomGameComplete(s, 'dual_nback')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'stroop' ? (
-            <StroopDrill
+            <LazyStroopDrill
               trialCount={stroopTrialCount}
               feedbackMs={stroopFeedbackMs}
               onComplete={(s) => handleCustomGameComplete(s, 'stroop')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'logic_deduction' ? (
-            <LogicInferenceDrill
+            <LazyLogicInferenceDrill
               onComplete={(s) => handleCustomGameComplete(s, 'logic_deduction')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'brief_recall' ? (
-            <BriefRecallDrill
+            <LazyBriefRecallDrill
               onComplete={(s) => handleCustomGameComplete(s, 'brief_recall')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'clearer_sentence' ? (
-            <ClearerSentenceDrill
+            <LazyClearerSentenceDrill
               onComplete={(s) => handleCustomGameComplete(s, 'clearer_sentence')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'number_sense' ? (
-            <NumberSenseDrill
+            <LazyNumberSenseDrill
               onComplete={(s) => handleCustomGameComplete(s, 'number_sense')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'brevity_cut' ? (
-            <BrevityCutDrill
+            <LazyBrevityCutDrill
               onComplete={(s) => handleCustomGameComplete(s, 'brevity_cut')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'quick_purchase' ? (
-            <QuickPurchaseDrill
+            <LazyQuickPurchaseDrill
               onComplete={(s) => handleCustomGameComplete(s, 'quick_purchase')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'sequence_order' ? (
-            <SequenceOrderDrill
+            <LazySequenceOrderDrill
               onComplete={(s) => handleCustomGameComplete(s, 'sequence_order')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'rsvp_reader' ? (
-            <RsvpReaderDrill
+            <LazyRsvpReaderDrill
               onComplete={(s) => handleCustomGameComplete(s, 'rsvp_reader')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'speed_match' ? (
-            <SpeedMatchDrill
+            <LazySpeedMatchDrill
               onComplete={(s) => handleCustomGameComplete(s, 'speed_match')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'signal_sweep' ? (
-            <SignalSweepDrill
+            <LazySignalSweepDrill
               onComplete={(s) => handleCustomGameComplete(s, 'signal_sweep')}
               onCancel={handleCancelSession}
             />
           ) : activeGameMode === 'pattern_shift' ? (
-            <PatternShiftDrill
+            <LazyPatternShiftDrill
               onComplete={(s) => handleCustomGameComplete(s, 'pattern_shift')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'synonym_race' ? (
+            <LazySynonymRaceDrill
+              onComplete={(s) => handleCustomGameComplete(s, 'synonym_race')}
+              onCancel={handleCancelSession}
+            />
+          ) : activeGameMode === 'tone_pick' ? (
+            <LazyTonePickDrill
+              onComplete={(s) => handleCustomGameComplete(s, 'tone_pick')}
               onCancel={handleCancelSession}
             />
           ) : workoutRunning && runningWorkout ? (
@@ -494,15 +537,16 @@ export const App: React.FC = () => {
               plan={runningWorkout.plan}
               initialStepIndex={runningWorkout.stepIndex}
               initialAttempts={runningWorkout.attempts}
-              onComplete={handleCompleteSession}
+              onComplete={(s) => handleCompleteSession(s)}
               onCancel={handleCancelWorkout}
               onProgress={handleWorkoutProgress}
+              abilityTheta={abilityTheta}
             />
           ) : activeSessionMode && activeSessionItems.length > 0 ? (
             <ExercisePlayer
               items={activeSessionItems}
               setMode={activeSessionMode}
-              onComplete={handleCompleteSession}
+              onComplete={(s) => handleCompleteSession(s)}
               onCancel={handleCancelSession}
             />
           ) : (
@@ -518,6 +562,7 @@ export const App: React.FC = () => {
                   onDiscardWorkout={handleDiscardWorkout}
                   onSaveHabitPrefs={handleSaveHabitPrefs}
                   onOpenGames={() => setActiveTab('arcade')}
+                  difficultyTierLabel={difficultyTierLabel}
                 />
               )}
 
@@ -539,6 +584,7 @@ export const App: React.FC = () => {
                 <AnalyticsPage
                   progress={progress}
                   sessionHistory={sessionHistory}
+                  abilityTheta={abilityTheta}
                   onStartDaily={() => {
                     if (dashboardActiveWorkout) handleContinueWorkout();
                     else handleStartSet('daily');
@@ -554,8 +600,16 @@ export const App: React.FC = () => {
         <SessionSummaryModal
           session={completedSession}
           updatedProgress={progress}
-          onClose={() => setCompletedSession(null)}
+          onClose={() => {
+            setCompletedSession(null);
+            setSessionAbilityBefore(null);
+            setSessionAbilityAfter(null);
+            setSessionArcadeNote(null);
+          }}
           onSaveHabitPrefs={handleSaveHabitPrefs}
+          abilityBefore={sessionAbilityBefore ?? undefined}
+          abilityAfter={sessionAbilityAfter ?? undefined}
+          arcadeIntensityNote={sessionArcadeNote}
         />
       )}
 
@@ -579,7 +633,7 @@ export const App: React.FC = () => {
       )}
 
       {isVoiceDrillOpen && (
-        <VoiceFluencyDrill
+        <LazyVoiceFluencyDrill
           onClose={() => setIsVoiceDrillOpen(false)}
           onComplete={handleVoiceComplete}
         />
